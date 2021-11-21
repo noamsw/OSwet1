@@ -1,6 +1,7 @@
 #ifndef SMASH_COMMAND_H_
 #define SMASH_COMMAND_H_
 #include <string.h>
+#include <vector>
 #include <map>
 
 #define COMMAND_ARGS_MAX_LENGTH (200)
@@ -10,7 +11,9 @@ class Command {
 // TODO: Add your data members
  public:
   int job_id;
-  std::string arguments[20];
+  char* arguments[];
+  int num_args; // command's name included
+
   Command(const char* cmd_line);
   virtual ~Command();
   virtual void execute() = 0;
