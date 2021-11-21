@@ -1,11 +1,18 @@
 The given skeleton includes the following files:
-- Commands.h/Commands.cpp: The supported commands of smash, each command is represented by a class that inherits from either BuiltInCommand or ExternalCommand. Each command that you add should implement execute, which is a virtual method, that executes the command.
-- signals.h/signals.cpp: Declares and implements requires signal handlers: SIGINT handler to handle Ctr+C and SIGTSTP to handle Ctrl+Z. If you are going to implement the bonus part then you have to implement additional handler for SIG_ALRM.
-- smash.cpp: Contains the smash main, which runs an infinite loop that receives the next typed command and sends it to SmallShell::executeCommand to handle it. Please note that if you are going to implement the bonus part, then you have to define a handler for SIG_ALRM in the main (in this file).
-- Makefile: builds and tests using a basic test your smash. You can use "make zip" to prepare a zip file for submission; this is recommended, which makes sure you follow our submission's structure. 
+- Commands.h/Commands.cpp: The supported commands of smash, each command is represented by a class that inherits from either BuiltInCommand or ExternalCommand.
+  Each command that you add should implement execute, which is a virtual method, that executes the command.
+- signals.h/signals.cpp: Declares and implements requires signal handlers: SIGINT handler to handle Ctr+C and SIGTSTP to handle Ctrl+Z.
+  If you are going to implement the bonus part then you have to implement additional handler for SIG_ALRM.
+- smash.cpp: Contains the smash main, which runs an infinite loop that receives the next typed command and sends it to SmallShell::executeCommand to handle it.
+  Please note that if you are going to implement the bonus part, then you have to define a handler for SIG_ALRM in the main (in this file).
+- Makefile: builds and tests using a basic test your smash. You can use "make zip" to prepare a zip file for submission;
+  this is recommended, which makes sure you follow our submission's structure.
 - test_input1.txt / test_expected_output1.txt: basic test files that being used by the given Makefile to run a basic test on your smash implementation. 
 
-Our solution and the skeleton code as well use a few known design patterns for making the code modular and readable. We use mainly two design pattersn: Singleton and Factory Method. There are many resources on the internet explaining about these design patters; they are, sometimes, known as the GoF (Gan of Four) design patters. We recommend you do a quick review of these two design patters for a better understanding of the skeleton.
+Our solution and the skeleton code as well use a few known design patterns for making the code modular and readable.
+We use mainly two design pattersn: Singleton and Factory Method.
+There are many resources on the internet explaining about these design patters; they are, sometimes, known as the GoF (Gan of Four) design patters.
+We recommend you do a quick review of these two design patters for a better understanding of the skeleton.
 
 How to start:
 First, you have to understand the skeleton design.

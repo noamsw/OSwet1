@@ -1,7 +1,7 @@
 #ifndef SMASH_COMMAND_H_
 #define SMASH_COMMAND_H_
-
-#include <vector>
+#include <string.h>
+#include <map>
 
 #define COMMAND_ARGS_MAX_LENGTH (200)
 #define COMMAND_MAX_ARGS (20)
@@ -9,6 +9,8 @@
 class Command {
 // TODO: Add your data members
  public:
+  int job_id;
+  std::string arguments[20];
   Command(const char* cmd_line);
   virtual ~Command();
   virtual void execute() = 0;
@@ -143,8 +145,13 @@ class HeadCommand : public BuiltInCommand {
 class SmallShell {
  private:
   // TODO: Add your data members
-  SmallShell();
+  //SmallShell();
  public:
+  std::string prompt_name;
+  std::map<int, Command*> jobs_list; // for BG and stopped jobs
+
+  SmallShell(const std::string& prompt_name = "smash> ") : prompt_name(prompt_name){}
+
   Command *CreateCommand(const char* cmd_line);
   SmallShell(SmallShell const&)      = delete; // disable copy ctor
   void operator=(SmallShell const&)  = delete; // disable = operator

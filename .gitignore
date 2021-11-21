@@ -10,3 +10,4 @@ compile_commands.json
 CTestTestfile.cmake
 *.xml
 _deps
+smash

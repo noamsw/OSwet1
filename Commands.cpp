@@ -6,7 +6,7 @@
 #include <sys/wait.h>
 #include <iomanip>
 #include "Commands.h"
-// bla bla bla
+
 using namespace std;
 
 #if 0
@@ -19,6 +19,8 @@ using namespace std;
 #define FUNC_ENTRY()
 #define FUNC_EXIT()
 #endif
+
+const string WHITESPACE = " \n\r\t\f\v";
 
 string _ltrim(const std::string& s)
 {
@@ -77,9 +79,9 @@ void _removeBackgroundSign(char* cmd_line) {
 
 // TODO: Add your implementation for classes in Commands.h 
 
-SmallShell::SmallShell() {
+//SmallShell::SmallShell() {
 // TODO: add your implementation
-}
+//}
 
 SmallShell::~SmallShell() {
 // TODO: add your implementation
