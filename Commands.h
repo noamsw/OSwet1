@@ -11,8 +11,8 @@ class Command {
 // TODO: Add your data members
  public:
   int job_id;
-  char* arguments[];
   int num_args; // command's name included
+  char* arguments[];
 
   Command(const char* cmd_line);
   virtual ~Command();

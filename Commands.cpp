@@ -80,12 +80,12 @@ void _removeBackgroundSign(char* cmd_line) {
 // TODO: Add your implementation for classes in Commands.h 
 
 
-Command(const char* cmd_line) : job_id(-1)
+Command::Command(const char* cmd_line) : job_id(-1)
 {
     num_args = _parseCommandLine(cmd_line, arguments);
 }
 
-virtual ~Command()
+Command::~Command()
 {
     for (int i = 0 ; i < num_args ; i++)
     {
@@ -95,7 +95,7 @@ virtual ~Command()
 
 
 
-BuiltInCommand(const char* cmd_line) : Command(cmd_line){}
+BuiltInCommand::BuiltInCommand(const char* cmd_line) : Command(cmd_line){}
 
 class chpromptCommand : public BuiltInCommand{
     chpromptCommand(const char* cmd_line) : BuiltInCommand(cmd_line){}
@@ -121,8 +121,8 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
   string cmd_s = _trim(string(cmd_line));
   string firstWord = cmd_s.substr(0, cmd_s.find_first_of(" \n"));
 
-  if (first_word == "chprompt" || first_word == "showpid" || first_word == "pwd" || first_word == "cd" ||
-    first_word == "jobs" || first_word == "kill" || first_word == "fg" || first_word == "bg" || first_word == "quit")
+  if (firstWord == "chprompt" || firstWord == "showpid" || firstWord == "pwd" || firstWord == "cd" ||
+          firstWord == "jobs" || firstWord == "kill" || firstWord == "fg" || firstWord == "bg" || firstWord == "quit")
   {
       if (_isBackgroundComamnd(cmd_line))
       {
