@@ -150,10 +150,10 @@ class SmallShell {
   // TODO: Add your data members
   //SmallShell();
  public:
-  std::string prompt_name;
+  std::string prompt;
   std::map<int, Command*> jobs_list; // for BG and stopped jobs
 
-  SmallShell(const std::string& prompt_name = "smash> ") : prompt_name(prompt_name){}
+  SmallShell(const std::string& prompt = "smash> ") : prompt(prompt){} // check if ok
 
   Command *CreateCommand(const char* cmd_line);
   SmallShell(SmallShell const&)      = delete; // disable copy ctor

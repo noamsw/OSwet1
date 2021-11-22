@@ -93,15 +93,7 @@ Command::~Command()
     }
 }
 
-
-
 BuiltInCommand::BuiltInCommand(const char* cmd_line) : Command(cmd_line){}
-
-class chpromptCommand : public BuiltInCommand{
-    chpromptCommand(const char* cmd_line) : BuiltInCommand(cmd_line){}
-
-};
-
 
 
 //SmallShell::SmallShell() {
@@ -116,25 +108,50 @@ SmallShell::~SmallShell() {
 * Creates and returns a pointer to Command class which matches the given command line (cmd_line)
 */
 Command * SmallShell::CreateCommand(const char* cmd_line) {
-	// For example:
 
   string cmd_s = _trim(string(cmd_line));
   string firstWord = cmd_s.substr(0, cmd_s.find_first_of(" \n"));
 
+    char new_line[COMMAND_ARGS_MAX_LENGTH];
+    strcpy(new_line, cmd_line);
+
+  // if the command is builtin it cant be BG
+  // remove "&' if exists
   if (firstWord == "chprompt" || firstWord == "showpid" || firstWord == "pwd" || firstWord == "cd" ||
           firstWord == "jobs" || firstWord == "kill" || firstWord == "fg" || firstWord == "bg" || firstWord == "quit")
   {
       if (_isBackgroundComamnd(cmd_line))
       {
-          _removeBackgroundSign(cmd_line);
+          _removeBackgroundSign(new_line);
       }
   }
 
+  if (firstWord.compare("chprompt") == 0)
+  {
+      char* arguments[COMMAND_MAX_ARGS];
+      int num_args = _parseCommandLine(new_line, arguments);
+      if (num_args == 1)
+      {
+          prompt = "smash> ";
+      } else
+      {
+          prompt = arguments[1];
+          prompt.append("> ");
+      }
+    for (int i=0 ; i<num_args ; i++)
+    {
+        free(arguments[i]);
+    }
+  }
+
+  else if (firstWord.compare("showpid") == 0)
+  {
+      cout << "smash pid is " << getpid() << endl;
+  }
+
+  /*
   if (firstWord.compare("pwd") == 0) {
     return new GetCurrDirCommand(cmd_line);
-  }
-  else if (firstWord.compare("showpid") == 0) {
-    return new ShowPidCommand(cmd_line);
   }
   else if ...
   .....
@@ -147,8 +164,10 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 
 void SmallShell::executeCommand(const char *cmd_line) {
   // TODO: Add your implementation here
-  // for example:
-  // Command* cmd = CreateCommand(cmd_line);
-  // cmd->execute();
+  Command* cmd = CreateCommand(cmd_line);
+  if (cmd != nullptr)
+  {
+      cmd->execute();
+  }
   // Please note that you must fork smash process for some commands (e.g., external commands....)
 }
