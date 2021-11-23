@@ -13,3 +13,4 @@ CTestTestfile.cmake
 _deps
 smash
 compile_commands.txt
+*.txt
