@@ -116,8 +116,9 @@ void GetCurrDirCommand::execute() {
 
 SmallShell::~SmallShell()
 {
-    if(!prev_dir){
+    if(prev_dir){
         free(prev_dir);
+        prev_dir = nullptr;
     }
 }
 
@@ -206,12 +207,15 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
             strcpy(tmp_path, prev_dir);
             free(prev_dir);
             prev_dir = nullptr;
-            getcwd(prev_dir, PATH_MAX);
+            char cwd[PATH_MAX];
+            getcwd(cwd, PATH_MAX);
+            prev_dir = (char*)(malloc(PATH_MAX));
+            strcpy(prev_dir, cwd);
             chdir(tmp_path);
         }
         else
         {
-            if(!prev_dir) {
+            if(prev_dir) {
                 free(prev_dir);
                 prev_dir = NULL;
             }
@@ -245,4 +249,4 @@ void SmallShell::executeCommand(const char *cmd_line) {
       cmd->execute();
   }
   // Please note that you must fork smash process for some commands (e.g., external commands....)
-}
+}//
