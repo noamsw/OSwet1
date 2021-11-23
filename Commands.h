@@ -3,6 +3,7 @@
 #include <string.h>
 #include <vector>
 #include <map>
+#include <linux/limits.h>
 
 #define COMMAND_ARGS_MAX_LENGTH (200)
 #define COMMAND_MAX_ARGS (20)
@@ -12,7 +13,7 @@ class Command {
  public:
   int job_id;
   int num_args; // command's name included
-  char* arguments[];
+  char* arguments[COMMAND_MAX_ARGS];
 
   Command(const char* cmd_line);
   virtual ~Command();
@@ -59,7 +60,7 @@ class ChangeDirCommand : public BuiltInCommand {
   virtual ~ChangeDirCommand() {}
   void execute() override;
 };
-
+/*
 class GetCurrDirCommand : public BuiltInCommand {
  public:
 //  char* pwd = nullptr; not sure we need this
@@ -67,7 +68,7 @@ class GetCurrDirCommand : public BuiltInCommand {
   virtual ~GetCurrDirCommand(){}
   void execute() override;
 };
-
+*/
 /*
 class PWDCommand : public BuiltInCommand {
  public:
@@ -173,3 +174,4 @@ class SmallShell {
 };
 
 #endif //SMASH_COMMAND_H_
+//
