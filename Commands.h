@@ -62,18 +62,21 @@ class ChangeDirCommand : public BuiltInCommand {
 
 class GetCurrDirCommand : public BuiltInCommand {
  public:
+//  char* pwd = nullptr; not sure we need this
   GetCurrDirCommand(const char* cmd_line);
-  virtual ~GetCurrDirCommand() {}
+  virtual ~GetCurrDirCommand(){}
   void execute() override;
 };
 
-class ShowPidCommand : public BuiltInCommand {
+/*
+class PWDCommand : public BuiltInCommand {
  public:
+  char* pwd = nullptr;
   ShowPidCommand(const char* cmd_line);
   virtual ~ShowPidCommand() {}
   void execute() override;
 };
-
+*/
 class JobsList;
 class QuitCommand : public BuiltInCommand {
 // TODO: Add your data members public:

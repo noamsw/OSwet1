@@ -94,15 +94,24 @@ Command::~Command()
 }
 
 BuiltInCommand::BuiltInCommand(const char* cmd_line) : Command(cmd_line){}
-
+GetCurrDirCommand::GetCurrDirCommand(const char *cmd_line) : BuiltInCommand(cmd_line){}
+void GetCurrDirCommand::execute() {
+    char* cwd = nullptr;
+    getcwd(cwd, 0);
+    printf("%s\n", cwd);
+    free(cwd);
+}
 
 //SmallShell::SmallShell() {
 // TODO: add your implementation
 //}
 
+
+
 SmallShell::~SmallShell() {
 // TODO: add your implementation
 }
+
 
 /**
 * Creates and returns a pointer to Command class which matches the given command line (cmd_line)
@@ -149,17 +158,17 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       cout << "smash pid is " << getpid() << endl;
   }
 
-  /*
-  if (firstWord.compare("pwd") == 0) {
-    return new GetCurrDirCommand(cmd_line);
-  }
-  else if ...
-  .....
-  else {
-    return new ExternalCommand(cmd_line);
-  }
-  */
-  return nullptr;
+    if (firstWord.compare("pwd") == 0) {
+        return new GetCurrDirCommand(cmd_line);
+    }
+    /*
+    else if ...
+    .....
+    else {
+      return new ExternalCommand(cmd_line);
+    }
+    */
+    return nullptr;
 }
 
 void SmallShell::executeCommand(const char *cmd_line) {
