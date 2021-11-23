@@ -116,7 +116,7 @@ void GetCurrDirCommand::execute() {
 
 SmallShell::~SmallShell()
 {
-    if(!prev_dir){
+    if(prev_dir){
         free(prev_dir);
     }
 }
@@ -211,7 +211,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         }
         else
         {
-            if(!prev_dir) {
+            if(prev_dir) {
                 free(prev_dir);
                 prev_dir = NULL;
             }
