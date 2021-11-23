@@ -181,7 +181,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         int num_args = _parseCommandLine(new_line, arguments);
         string new_path = arguments[1];
 
-        if (num_args > 1)
+        if (num_args > 2)
         {
             cout << "smash error: cd: too many arguments" << endl;
             for (int i=0 ; i<num_args ; i++)
@@ -202,8 +202,11 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
                 }
                 return nullptr;
             }
-            char* tmp_path = prev_dir;
-            getcwd(prev_dir, 0);
+            char tmp_path[PATH_MAX];
+            strcpy(tmp_path, prev_dir);
+            free(prev_dir);
+            prev_dir = nullptr;
+            getcwd(prev_dir, PATH_MAX);
             chdir(tmp_path);
         }
         else
@@ -212,7 +215,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
                 free(prev_dir);
             }
 
-            getcwd(prev_dir, 0);
+            getcwd(prev_dir, PATH_MAX);
             chdir(arguments[1]);
         }
         for (int i=0 ; i<num_args ; i++)

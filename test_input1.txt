@@ -1,2 +1,7 @@
 chprompt hello
 pwd
+cd -
+cd /home/student/
+pwd
+cd -
+pwd
