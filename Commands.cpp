@@ -94,14 +94,20 @@ Command::~Command()
 }
 
 BuiltInCommand::BuiltInCommand(const char* cmd_line) : Command(cmd_line){}
+/*
 GetCurrDirCommand::GetCurrDirCommand(const char *cmd_line) : BuiltInCommand(cmd_line){}
 void GetCurrDirCommand::execute() {
     char* cwd = nullptr;
     getcwd(cwd, 0);
-    printf("%s\n", cwd);
-    free(cwd);
+    if(cwd){
+        std::string pwd(cwd);
+        std::cout << pwd << endl;
+        free(cwd);
+        return;
+    }
+    cout<< "cwd failed" <<endl;
 }
-
+*/
 //SmallShell::SmallShell() {
 // TODO: add your implementation
 //}
@@ -155,14 +161,18 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         free(arguments[i]);
     }
   }
-
+///
   else if (firstWord.compare("showpid") == 0)
   {
       cout << "smash pid is " << getpid() << endl;
   }
 
-    else if (firstWord.compare("pwd") == 0) {
-        return new GetCurrDirCommand(cmd_line);
+    if (firstWord.compare("pwd") == 0) {
+//        return new GetCurrDirCommand(cmd_line);
+        char cwd[PATH_MAX];
+        getcwd(cwd, PATH_MAX);
+        std::string pwd(cwd);
+        std::cout << pwd << endl;
     }
 
     else if (firstWord.compare("cd") == 0)
