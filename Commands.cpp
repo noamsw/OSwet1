@@ -108,8 +108,11 @@ void GetCurrDirCommand::execute() {
 
 
 
-SmallShell::~SmallShell() {
-// TODO: add your implementation
+SmallShell::~SmallShell()
+{
+    if(!prev_dir){
+        free(prev_dir);
+    }
 }
 
 
@@ -158,8 +161,55 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       cout << "smash pid is " << getpid() << endl;
   }
 
-    if (firstWord.compare("pwd") == 0) {
+    else if (firstWord.compare("pwd") == 0) {
         return new GetCurrDirCommand(cmd_line);
+    }
+
+    else if (firstWord.compare("cd") == 0)
+    {
+        char* arguments[COMMAND_MAX_ARGS];
+        int num_args = _parseCommandLine(new_line, arguments);
+        string new_path = arguments[1];
+
+        if (num_args > 1)
+        {
+            cout << "smash error: cd: too many arguments" << endl;
+            for (int i=0 ; i<num_args ; i++)
+            {
+                free(arguments[i]);
+            }
+            return nullptr;
+        }
+
+        if (new_path.compare("-") == 0)
+        {
+            if (prev_dir == nullptr)
+            {
+                cout << "smash error: cd: OLDPWD not set" << endl;
+                for (int i=0 ; i<num_args ; i++)
+                {
+                    free(arguments[i]);
+                }
+                return nullptr;
+            }
+            char* tmp_path = prev_dir;
+            getcwd(prev_dir, 0);
+            chdir(tmp_path);
+        }
+        else
+        {
+            if(!prev_dir) {
+                free(prev_dir);
+            }
+
+            getcwd(prev_dir, 0);
+            chdir(arguments[1]);
+        }
+        for (int i=0 ; i<num_args ; i++)
+        {
+            free(arguments[i]);
+        }
+        return nullptr;
     }
     /*
     else if ...

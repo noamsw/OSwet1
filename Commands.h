@@ -12,7 +12,7 @@ class Command {
  public:
   int job_id;
   int num_args; // command's name included
-  char* arguments[];
+  char* arguments[COMMAND_MAX_ARGS];
 
   Command(const char* cmd_line);
   virtual ~Command();
@@ -153,10 +153,14 @@ class SmallShell {
   // TODO: Add your data members
   //SmallShell();
  public:
+  char* prev_dir;
   std::string prompt;
   std::map<int, Command*> jobs_list; // for BG and stopped jobs
 
-  SmallShell(const std::string& prompt = "smash> ") : prompt(prompt){} // check if ok
+  SmallShell(const std::string& prompt = "smash> ") : prompt(prompt)
+  {
+      prev_dir = nullptr;
+  } // check if ok
 
   Command *CreateCommand(const char* cmd_line);
   SmallShell(SmallShell const&)      = delete; // disable copy ctor

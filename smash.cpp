@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
     //TODO: setup sig alarm handler
 
     SmallShell& smash = SmallShell::getInstance();
-    while(true) {
+    for (int i=0 ; i<10 ; i++){
         std::cout << smash.prompt << std::endl; // check if endl is needed
         std::string cmd_line;
         std::getline(std::cin, cmd_line);
