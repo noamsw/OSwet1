@@ -213,9 +213,12 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         {
             if(!prev_dir) {
                 free(prev_dir);
+                prev_dir = NULL;
             }
-
-            getcwd(prev_dir, PATH_MAX);
+            char cwd[PATH_MAX];
+            getcwd(cwd, PATH_MAX);
+            prev_dir = (char*)(malloc(PATH_MAX));
+            strcpy(prev_dir, cwd);
             chdir(arguments[1]);
         }
         for (int i=0 ; i<num_args ; i++)
