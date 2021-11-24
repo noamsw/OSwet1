@@ -11,7 +11,6 @@
 class Command {
 // TODO: Add your data members
  public:
-  int job_id;
   int num_args; // command's name included
   char* arguments[COMMAND_MAX_ARGS];
 
@@ -148,20 +147,33 @@ class HeadCommand : public BuiltInCommand {
   void execute() override;
 };
 
+class command_id
+{
+public:
+    int job_id;
+    pid_t commands_pid;
+    command_id(pid_t pid) : commands_pid (pid)
+    {
+
+    }
+};
+
+void insert_to_jobs_list()
+{
+
+}
 
 class SmallShell {
  private:
   // TODO: Add your data members
   //SmallShell();
  public:
+  int max_job_id;
   char* prev_dir;
   std::string prompt;
-  std::map<int, Command*> jobs_list; // for BG and stopped jobs
+  std::vector<command_id> jobs_list; // for BG and stopped jobs
 
-  SmallShell(const std::string& prompt = "smash> ") : prompt(prompt)
-  {
-      prev_dir = nullptr;
-  } // check if ok
+  SmallShell(const std::string& prompt = "smash> ") : prompt(prompt), max_job_id(0), prev_dir(nullptr) {} // check if ok
 
   Command *CreateCommand(const char* cmd_line);
   SmallShell(SmallShell const&)      = delete; // disable copy ctor
@@ -176,6 +188,7 @@ class SmallShell {
   void executeCommand(const char* cmd_line);
   // TODO: add extra methods as needed
 };
+
 
 #endif //SMASH_COMMAND_H_
 //

@@ -122,7 +122,6 @@ SmallShell::~SmallShell()
     }
 }
 
-
 /**
 * Creates and returns a pointer to Command class which matches the given command line (cmd_line)
 */
