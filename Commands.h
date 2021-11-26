@@ -147,15 +147,12 @@ class HeadCommand : public BuiltInCommand {
   void execute() override;
 };
 
-class command_id
+class job // changed the name to job, made more sense to me. small tuple class no need for ctor, dtor, clone.
 {
 public:
     int job_id;
-    pid_t commands_pid;
-    command_id(pid_t pid) : commands_pid (pid)
-    {
-
-    }
+    pid_t command_pid;
+    job(pid_t pid);
 };
 
 void insert_to_jobs_list()
@@ -171,11 +168,14 @@ class SmallShell {
   int max_job_id;
   char* prev_dir;
   std::string prompt;
-  std::vector<command_id> jobs_list; // for BG and stopped jobs
-
-  SmallShell(const std::string& prompt = "smash> ") : prompt(prompt), max_job_id(0), prev_dir(nullptr) {} // check if ok
-
+  pid_t cur_pid; // pid of process running in the smash currently
+  bool p_running; //flag to see if there is a process running inside the shell
+  std::vector<job> jobs_list; // for BG and stopped jobs
+protected: //how to make sure that only a singleton is created
+  SmallShell(const std::string& prompt = "smash> ") : max_job_id(0), prev_dir(nullptr), prompt(prompt), p_running(false), cur_pid(-1) {} // check if ok i initialized the cur_pid to -1 but it is arbitrary i think
+public:
   Command *CreateCommand(const char* cmd_line);
+  int get_a_job_id();  // will return an id that should be assigned to a new job
   SmallShell(SmallShell const&)      = delete; // disable copy ctor
   void operator=(SmallShell const&)  = delete; // disable = operator
   static SmallShell& getInstance() // make SmallShell singleton
