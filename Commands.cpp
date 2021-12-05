@@ -113,7 +113,7 @@ void GetCurrDirCommand::execute() {
 //}
 
 int SmallShell::get_a_job_id() {// will returnt the current id open for a job and increment
-    return SmallShell::getInstance().max_job_id();
+    return SmallShell::getInstance().max_job_id;
     SmallShell::getInstance().max_job_id++;
 }
 void JobsList::addJob(int job_id, pid_t cmd_pid, time_t t_entered, char *cmd, bool isStopped) {
