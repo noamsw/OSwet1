@@ -111,17 +111,15 @@ void GetCurrDirCommand::execute() {
 //SmallShell::SmallShell() {
 // TODO: add your implementation
 //}
-job::job(pid_t pid) : command_pid (pid)
-        {
-                job_id = SmallShell::getInstance();
-
-        }
 
 int SmallShell::get_a_job_id() {// will returnt the current id open for a job and increment
     return SmallShell::getInstance().max_job_id();
     SmallShell::getInstance().max_job_id++;
 }
+void JobsList::addJob(int job_id, pid_t cmd_pid, time_t t_entered, char *cmd, bool isStopped) {
+    JobEntry newjob(job_id, cmd_pid, t_entered, cmd, isStopped );
 
+}
 SmallShell::~SmallShell()
 {
     if(prev_dir){

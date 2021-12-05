@@ -13,7 +13,7 @@ class Command {
  public:
   int num_args; // command's name included
   char* arguments[COMMAND_MAX_ARGS];
-
+  int job_id; //i think we will need to store the job id in the cmd inorder to save it if it has been added than removed from the jobsList
   Command(const char* cmd_line);
   virtual ~Command();
   virtual void execute() = 0;
@@ -77,7 +77,6 @@ class PWDCommand : public BuiltInCommand {
   void execute() override;
 };
 */
-class JobsList;
 class QuitCommand : public BuiltInCommand {
 // TODO: Add your data members public:
   QuitCommand(const char* cmd_line, JobsList* jobs);
@@ -90,14 +89,20 @@ class QuitCommand : public BuiltInCommand {
 
 class JobsList {
  public:
-  class JobEntry {
-   // TODO: Add your data members
+  class JobEntry {//deleted the job class and instantiated the job entry class that they gave us
+  public:
+      int job_id;//job id assigned by smash
+      pid_t cmd_pid;// process pid assigned after the fork
+      time_t t_entered;// time when inserted from the epoch in 1970.
+      char* cmd;// the cmd of the job
+      bool isStopped;//was the job stopped or simply sent to the bg
+      JobEntry(int job_id, pid_t cmd_pid, time_t t_entered, char* cmd, bool isStopped) : job_id(job_id), cmd_pid(cmd_pid), t_entered(t_entered), cmd(cmd), isStopped(isStopped) {}
   };
- // TODO: Add your data members
+ std::vector<JobEntry> jobslist;
  public:
-  JobsList();
-  ~JobsList();
-  void addJob(Command* cmd, bool isStopped = false);
+  JobsList() = default; // i think that there isnt anything special here
+  ~JobsList() = default; // same as above
+  void addJob(int job_id, pid_t cmd_pid, time_t t_entered, char* cmd, bool isStopped = false); // a method for adding jobs to the job list
   void printJobsList();
   void killAllJobs();
   void removeFinishedJobs();
@@ -170,7 +175,7 @@ class SmallShell {
   std::string prompt;
   pid_t cur_pid; // pid of process running in the smash currently
   bool p_running; //flag to see if there is a process running inside the shell
-  std::vector<job> jobs_list; // for BG and stopped jobs
+  JobsList jobslist; //switched from std::vector for BG and stopped jobs
 protected: //how to make sure that only a singleton is created
   SmallShell(const std::string& prompt = "smash> ") : max_job_id(0), prev_dir(nullptr), prompt(prompt), p_running(false), cur_pid(-1) {} // check if ok i initialized the cur_pid to -1 but it is arbitrary i think
 public:
