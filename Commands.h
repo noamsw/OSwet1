@@ -11,10 +11,12 @@
 class Command {
 // TODO: Add your data members
  public:
+  pid_t p_id;
   int num_args; // command's name included
   char* arguments[COMMAND_MAX_ARGS];
   int job_id; //i think we will need to store the job id in the cmd inorder to save it if it has been added than removed from the jobsList
-  Command(const char* cmd_line);
+  const char* cmd_line;
+  Command(const char* cmd_line, pid_t p_id);
   virtual ~Command();
   virtual void execute() = 0;
   //virtual void prepare();
@@ -75,15 +77,15 @@ public:
         int job_id;//job id assigned by smash
         pid_t cmd_pid;// process pid assigned after the fork
         time_t t_entered;// time when inserted from the epoch in 1970.
-        char* cmd;// the cmd of the job
+        const char* cmd;// the cmd of the job
         bool isStopped;//was the job stopped or simply sent to the bg
-        JobEntry(int job_id, pid_t cmd_pid, time_t t_entered, char* cmd, bool isStopped) : job_id(job_id), cmd_pid(cmd_pid), t_entered(t_entered), cmd(cmd), isStopped(isStopped) {}
+        JobEntry(int job_id, pid_t cmd_pid, time_t t_entered, const char* cmd, bool isStopped) : job_id(job_id), cmd_pid(cmd_pid), t_entered(t_entered), cmd(cmd), isStopped(isStopped) {}
     };
     std::vector<JobEntry> jobslist;
 public:
     JobsList() = default; // i think that there isnt anything special here
     ~JobsList() = default; // same as above
-    void addJob(int job_id, pid_t cmd_pid, time_t t_entered, char* cmd, bool isStopped = false); // a method for adding jobs to the job list
+    void addJob(Command* cmd, bool isStopped = false); // a method for adding jobs to the job list
     void printJobsList();
     void killAllJobs();
     void removeFinishedJobs();
@@ -152,15 +154,6 @@ class HeadCommand : public BuiltInCommand {
   void execute() override;
 };
 
-//class job // changed the name to job, made more sense to me. small tuple class no need for ctor, dtor, clone.
-//{
-//public:
-//    int job_id;
-//    pid_t command_pid;
-//    job(pid_t pid);
-//};
-
-
 class SmallShell {
  private:
   // TODO: Add your data members
@@ -173,12 +166,12 @@ class SmallShell {
   bool p_running; //flag to see if there is a process running inside the shell
   JobsList jobslist; //switched from std::vector for BG and stopped jobs
 protected: //how to make sure that only a singleton is created
-  SmallShell(const std::string& prompt = "smash> ") : max_job_id(0), prev_dir(nullptr), prompt(prompt), cur_pid(-1), p_running(false) {} // check if ok i initialized the cur_pid to -1 but it is arbitrary i think
+  SmallShell(const std::string& prompt = "smash> ") : max_job_id(1), prev_dir(nullptr), prompt(prompt), cur_pid(-1), p_running(false) {} // check if ok i initialized the cur_pid to -1 but it is arbitrary i think
 public:
   Command *CreateCommand(const char* cmd_line);
   int get_a_job_id();  // will return an id that should be assigned to a new job
   SmallShell(SmallShell const&)      = delete; // disable copy ctor
-  void operator=(SmallShell const&)  = delete; // disable = operator
+  void operator=(SmallShell const&)  = delete; // disable assignment operator
   static SmallShell& getInstance() // make SmallShell singleton
   {
     static SmallShell instance; // Guaranteed to be destroyed.

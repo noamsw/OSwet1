@@ -6,7 +6,7 @@
 #include <sys/wait.h>
 #include <iomanip>
 #include "Commands.h"
-
+#include <time.h>
 using namespace std;
 
 #if 0
@@ -80,7 +80,7 @@ void _removeBackgroundSign(char* cmd_line) {
 // TODO: Add your implementation for classes in Commands.h 
 
 
-Command::Command(const char* cmd_line) : job_id(-1)
+Command::Command(const char* cmd_line, pid_t p_id) : job_id(-1), p_id(p_id), cmd_line(cmd_line)
 {
     num_args = _parseCommandLine(cmd_line, arguments);
 }
@@ -112,12 +112,31 @@ void GetCurrDirCommand::execute() {
 // TODO: add your implementation
 //}
 
-int SmallShell::get_a_job_id() {// will returnt the current id open for a job and increment
-    return SmallShell::getInstance().max_job_id;
+int SmallShell::get_a_job_id() {
+    // will returnt the current id open for a job and increment
+    int  id = SmallShell::getInstance().max_job_id;
     SmallShell::getInstance().max_job_id++;
+    return id;
 }
-void JobsList::addJob(int job_id, pid_t cmd_pid, time_t t_entered, char *cmd, bool isStopped) {
-    JobEntry newjob(job_id, cmd_pid, t_entered, cmd, isStopped );
+void JobsList::addJob(Command* cmd, bool isStopped) {
+    time_t time_entered;
+    time(&time_entered);
+    JobEntry newjob(cmd->job_id, cmd->p_id, time_entered, cmd->cmd_line, isStopped);
+    if(cmd->job_id == -1)
+        newjob.job_id = SmallShell::getInstance().get_a_job_id();
+    removeFinishedJobs();
+    bool inserted = false;
+    for(std::vector<JobEntry>::iterator it = jobslist.begin(); it != jobslist.end(); ++it){
+        if(it->job_id > newjob.job_id){
+            jobslist.insert(it, newjob);
+            inserted = true;
+        }
+    }
+    if(!inserted)
+        jobslist.insert(jobslist.end(), newjob);
+}
+
+void JobsList::removeFinishedJobs() {
 
 }
 SmallShell::~SmallShell()
