@@ -139,7 +139,7 @@ void JobsList::addJob(Command* cmd, bool isStopped) {
 
 void JobsList::removeFinishedJobs() {
     int status;
-    for(auto  it = jobslist.begin(); it != jobslist.end(); ++it) {
+    for(auto  it = jobslist.begin(); it != jobslist.end(); ++it) {// a little confused with variable type
         waitpid(it->job_id, &status, WNOHANG);
         if (status != 0) { //im ignoring status -1 which means there was an error and assuming that it was dealt with
             it = jobslist.erase(it);
