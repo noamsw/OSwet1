@@ -139,13 +139,27 @@ void JobsList::addJob(Command* cmd, bool isStopped) {
 
 void JobsList::removeFinishedJobs() {
     int status;
-    for(std::vector<JobEntry>::iterator it = jobslist.begin(); it != jobslist.end(); ++it) {
+    for(auto & it = jobslist.begin(); it != jobslist.end(); ++it) {
         waitpid(it->job_id, &status, WNOHANG);
         if (status != 0) { //im ignoring status -1 which means there was an error and assuming that it was dealt with
             it = jobslist.erase(it);
         }
     }
 }
+
+void JobsList::printJobsList() {
+    removeFinishedJobs();
+    time_t time_now;
+    time(&time_now);
+    for(auto & it : jobslist){
+        time(&time_now); // im not sure how much of a diff itll make but i updated the time in the loop
+        double seconds_since = difftime(it.t_entered, time_now);
+        if(it.isStopped)
+            cout << "[" << it.job_id << "]" << it.cmd << ":" << it.cmd_pid << seconds_since << " secs (stopped)";
+        else   cout << "[" << it.job_id << "]" << it.cmd << ":" << it.cmd_pid << seconds_since << " secs";
+    }
+}
+
 SmallShell::~SmallShell()
 {
     if(prev_dir){
@@ -199,16 +213,15 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       cout << "smash pid is " << getpid() << endl;
   }
 
-    if (firstWord.compare("pwd") == 0) {
-//        return new GetCurrDirCommand(cmd_line);
+  else if (firstWord.compare("pwd") == 0) {
+        //return new GetCurrDirCommand(cmd_line);
         char cwd[PATH_MAX];
         getcwd(cwd, PATH_MAX);
         std::string pwd(cwd);
         std::cout << pwd << endl;
     }
 
-    else if (firstWord.compare("cd") == 0)
-    {
+  else if (firstWord.compare("cd") == 0){
         char* arguments[COMMAND_MAX_ARGS];
         int num_args = _parseCommandLine(new_line, arguments);
         string new_path = arguments[1];
@@ -261,7 +274,10 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
             free(arguments[i]);
         }
         return nullptr;
-    }
+  }
+  else if(firstWord.compare("jobs") == 0){
+      jobslist.printJobsList();
+  }
     /*
     else if ...
     .....
