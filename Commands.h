@@ -90,8 +90,8 @@ public:
     void killAllJobs();
     void removeFinishedJobs();
     JobEntry * getJobById(int jobId);
-    void removeJobById(int jobId);
-    JobEntry * getLastJob(int* lastJobId);
+    void removeJobById(int jobId); // NEED TO IMPLEMENT
+    JobEntry * getLastJob(int* lastJobId); // I think we dont need this
     JobEntry *getLastStoppedJob(int *jobId);
     // TODO: Add extra methods or modify exisitng ones as needed
 };

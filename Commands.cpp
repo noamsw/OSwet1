@@ -119,12 +119,16 @@ int SmallShell::get_a_job_id() {
     SmallShell::getInstance().max_job_id++;
     return id;
 }
+
 void JobsList::addJob(Command* cmd, bool isStopped) {
+    if(cmd->job_id == -1)
+    {
+        cmd->job_id = SmallShell::getInstance().get_a_job_id();
+    }
     time_t time_entered;
     time(&time_entered);
     JobEntry newjob(cmd->job_id, cmd->p_id, time_entered, cmd->cmd_line, isStopped);
-    if(cmd->job_id == -1)
-        newjob.job_id = SmallShell::getInstance().get_a_job_id();
+
     removeFinishedJobs();
     bool inserted = false;
     for(std::vector<JobEntry>::iterator it = jobslist.begin(); it != jobslist.end(); ++it){
@@ -169,6 +173,37 @@ JobsList::JobEntry* JobsList::getJobById(int jobId) {
     return job;
 }
 
+/*
+void JobsList::removeJobById(int jobId)
+{
+    it
+    jobslist.erase(it);
+}
+*/
+
+JobsList::JobEntry* JobsList::getLastStoppedJob(int *jobId)
+{
+    JobEntry* job = nullptr;
+    for (auto & it  : jobslist) {
+        if(it.isStopped)
+        {
+            job = &it;
+            *jobId = it.job_id;
+        }
+    }
+    return job;
+}
+
+void JobsList::killAllJobs()
+{
+    for (auto & it  : jobslist)
+    {
+        cout << it.cmd_pid << ": " << it.cmd << endl;
+        kill(it.cmd_pid, SIGKILL);
+    }
+
+}
+
 SmallShell::~SmallShell()
 {
     if(prev_dir){
@@ -185,8 +220,8 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
   string cmd_s = _trim(string(cmd_line));
   string firstWord = cmd_s.substr(0, cmd_s.find_first_of(" \n"));
 
-    char new_line[COMMAND_ARGS_MAX_LENGTH];
-    strcpy(new_line, cmd_line);
+  char new_line[COMMAND_ARGS_MAX_LENGTH];
+  strcpy(new_line, cmd_line);
 
   // if the command is builtin it cant be BG
   // remove "&' if exists
@@ -216,7 +251,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         free(arguments[i]);
     }
   }
-///
+
   else if (firstWord.compare("showpid") == 0)
   {
       cout << "smash pid is " << getpid() << endl;
@@ -284,10 +319,12 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         }
         return nullptr;
   }
+
   else if(firstWord.compare("jobs") == 0){
       jobslist.printJobsList();
   }
-  else if(firstWord.compare("kill")){
+
+  else if(firstWord.compare("kill") == 0){
         char* arguments[COMMAND_MAX_ARGS];
         int num_args = _parseCommandLine(new_line, arguments);
         string sig = arguments[1];
@@ -321,14 +358,156 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         else
             cout << "signal number" << sig_num << "was sent to pid" << job->cmd_pid << endl;
   }
-    /*
-    else if ...
-    .....
-    else {
-      return new ExternalCommand(cmd_line);
-    }
-    */
-    return nullptr;
+
+  else if (firstWord.compare("fg") == 0)
+  {
+      char* arguments[COMMAND_MAX_ARGS];
+      int num_args = _parseCommandLine(new_line, arguments);
+
+      // check if the syntax (num_args and format of the command) is valid
+      // whats the meaning of "format"? make sure its a number?
+      if (num_args > 2)
+      {
+          cout << "smash error: fg: invalid arguments" << endl;
+          for (int i=0 ; i<num_args ; i++)
+          {
+              free(arguments[i]);
+          }
+          return nullptr;
+      }
+
+      // find the command in the jobs list:
+      int job_id;
+      if (num_args == 1) // job_id isnt given
+          job_id = max_job_id - 1;
+      else // job_id is given
+        job_id = atoi(arguments[1]);
+
+      JobsList::JobEntry* cur_job = jobslist.getJobById(job_id);
+      if (num_args >= 2 && cur_job == nullptr)
+      {
+          cout << "smash error: fg: job-id " << job_id << " does not exist" << endl;
+          for (int i=0 ; i<num_args ; i++)
+          {
+              free(arguments[i]);
+          }
+          return nullptr;
+      }
+      if (num_args == 1 && cur_job == nullptr)
+      {
+          cout << "smash error: fg: jobs list is empty" << endl;
+          for (int i=0 ; i<num_args ; i++)
+          {
+              free(arguments[i]);
+          }
+          return nullptr;
+      }
+
+      cout << cur_job->cmd << " : " << cur_job->cmd_pid << endl;
+
+      if (cur_job->isStopped)
+        kill(cur_job->cmd_pid ,SIGCONT);
+
+      int wstaus;
+      waitpid(cur_job->cmd_pid, &wstaus, 0); // is 0 the right value for the "options" arg?
+
+      // jobslist.removeJobById(job_id); // not implemented yet
+
+      for (int i=0 ; i<num_args ; i++)
+      {
+          free(arguments[i]);
+      }
+      return nullptr;
+  }
+
+  else if (firstWord.compare("bg") == 0)
+  {
+      char* arguments[COMMAND_MAX_ARGS];
+      int num_args = _parseCommandLine(new_line, arguments);
+
+      // check if the syntax (num_args and format of the command) is valid
+      // whats the meaning of "format"? make sure its a number?
+      if (num_args > 2)
+      {
+          cout << "smash error: bg: invalid arguments" << endl;
+          for (int i=0 ; i<num_args ; i++)
+          {
+              free(arguments[i]);
+          }
+          return nullptr;
+      }
+
+      // find the command in the jobs list:
+      JobsList::JobEntry* cur_job;
+      if (num_args == 1) // job_id isnt given
+      {
+          int job_id;
+          cur_job = jobslist.getLastStoppedJob(&job_id);
+          if (cur_job == nullptr)
+          {
+              cout << "smash error: bg: there is no stopped jobs to resume" << endl;
+              for (int i=0 ; i<num_args ; i++)
+              {
+                  free(arguments[i]);
+              }
+              return nullptr;
+          }
+      }
+      else // job_id is given
+      {
+          int job_id = atoi(arguments[1]);
+          cur_job = jobslist.getJobById(job_id);
+          if (cur_job == nullptr)
+          {
+              cout << "smash error: bg: job-id " << job_id << " does not exist" << endl;
+              for (int i=0 ; i<num_args ; i++)
+              {
+                  free(arguments[i]);
+              }
+              return nullptr;
+          }
+          if (!cur_job->isStopped)
+          {
+              cout << "smash error: bg: job-id " << job_id << " is already running in the background" << endl;
+              for (int i=0 ; i<num_args ; i++)
+              {
+                  free(arguments[i]);
+              }
+              return nullptr;
+          }
+      }
+
+      cout << cur_job->cmd << " : " << cur_job->cmd_pid << endl;
+      cur_job->isStopped = false;
+      kill(cur_job->cmd_pid ,SIGCONT);
+      for (int i=0 ; i<num_args ; i++)
+      {
+          free(arguments[i]);
+      }
+      return nullptr;
+  }
+
+  else if (firstWord.compare("quit") == 0)
+  {
+      char* arguments[COMMAND_MAX_ARGS];
+      int num_args = _parseCommandLine(new_line, arguments);
+
+      if (num_args >= 2)
+      {
+          if (arguments[1] == "kill")
+          {
+              cout << "smash: sending SIGKILL signal to " << jobslist.jobslist.size() << " jobs:" << endl;
+              jobslist.killAllJobs();
+          }
+      }
+      for (int i=0 ; i<num_args ; i++)
+      {
+          free(arguments[i]);
+      }
+      exit (0);
+  }
+
+  return nullptr;
 }
 
 void SmallShell::executeCommand(const char *cmd_line) {
