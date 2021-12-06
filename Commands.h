@@ -26,7 +26,7 @@ class Command {
 
 class BuiltInCommand : public Command {
  public:
-  BuiltInCommand(const char* cmd_line);
+  BuiltInCommand(const char* cmd_line, pid_t p_id);
   virtual ~BuiltInCommand() {}
 };
 

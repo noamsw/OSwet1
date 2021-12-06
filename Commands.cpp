@@ -4,6 +4,7 @@
 #include <vector>
 #include <sstream>
 #include <sys/wait.h>
+#include <sys/types.h>
 #include <iomanip>
 #include "Commands.h"
 #include <time.h>
@@ -93,7 +94,7 @@ Command::~Command()
     }
 }
 
-BuiltInCommand::BuiltInCommand(const char* cmd_line) : Command(cmd_line){}
+BuiltInCommand::BuiltInCommand(const char* cmd_line, pid_t p_id) : Command(cmd_line, p_id){}
 /*
 GetCurrDirCommand::GetCurrDirCommand(const char *cmd_line) : BuiltInCommand(cmd_line){}
 void GetCurrDirCommand::execute() {
@@ -137,7 +138,13 @@ void JobsList::addJob(Command* cmd, bool isStopped) {
 }
 
 void JobsList::removeFinishedJobs() {
-
+    int status;
+    for(std::vector<JobEntry>::iterator it = jobslist.begin(); it != jobslist.end(); ++it) {
+        waitpid(it->job_id, &status, WNOHANG);
+        if (status != 0) { //im ignoring status -1 which means there was an error and assuming that it was dealt with
+            it = jobslist.erase(it);
+        }
+    }
 }
 SmallShell::~SmallShell()
 {
