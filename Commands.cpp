@@ -139,13 +139,36 @@ void JobsList::addJob(Command* cmd, bool isStopped) {
 
 void JobsList::removeFinishedJobs() {
     int status;
-    for(std::vector<JobEntry>::iterator it = jobslist.begin(); it != jobslist.end(); ++it) {
+    for(auto  it = jobslist.begin(); it != jobslist.end(); ++it) {
         waitpid(it->job_id, &status, WNOHANG);
         if (status != 0) { //im ignoring status -1 which means there was an error and assuming that it was dealt with
             it = jobslist.erase(it);
         }
     }
 }
+
+void JobsList::printJobsList() {
+    removeFinishedJobs();
+    time_t time_now;
+    time(&time_now);
+    for(auto & it : jobslist){
+        time(&time_now); // im not sure how much of a diff itll make but i updated the time in the loop
+        double seconds_since = difftime(it.t_entered, time_now);
+        if(it.isStopped)
+            cout << "[" << it.job_id << "]" << it.cmd << ":" << it.cmd_pid << seconds_since << " secs (stopped)";
+        else   cout << "[" << it.job_id << "]" << it.cmd << ":" << it.cmd_pid << seconds_since << " secs";
+    }
+}
+
+JobsList::JobEntry* JobsList::getJobById(int jobId) {
+    JobEntry* job = nullptr;
+    for (auto & it  : jobslist) {
+        if(it.job_id == jobId)
+            job = &it; // i think that this will give me the address of the job stored in the vector
+    }
+    return job;
+}
+
 SmallShell::~SmallShell()
 {
     if(prev_dir){
@@ -199,16 +222,15 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       cout << "smash pid is " << getpid() << endl;
   }
 
-    if (firstWord.compare("pwd") == 0) {
-//        return new GetCurrDirCommand(cmd_line);
+  else if (firstWord.compare("pwd") == 0) {
+        //return new GetCurrDirCommand(cmd_line);
         char cwd[PATH_MAX];
         getcwd(cwd, PATH_MAX);
         std::string pwd(cwd);
         std::cout << pwd << endl;
     }
 
-    else if (firstWord.compare("cd") == 0)
-    {
+  else if (firstWord.compare("cd") == 0){
         char* arguments[COMMAND_MAX_ARGS];
         int num_args = _parseCommandLine(new_line, arguments);
         string new_path = arguments[1];
@@ -261,7 +283,44 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
             free(arguments[i]);
         }
         return nullptr;
-    }
+  }
+  else if(firstWord.compare("jobs") == 0){
+      jobslist.printJobsList();
+  }
+  else if(firstWord.compare("kill")){
+        char* arguments[COMMAND_MAX_ARGS];
+        int num_args = _parseCommandLine(new_line, arguments);
+        string sig = arguments[1];
+        string id = arguments[2];
+        string sig_num = arguments[1];
+        sig_num = sig_num.substr(1);
+        bool not_digits = true;
+        if(sig_num.find_first_not_of("1234567890") == std::string::npos)// check to see that a number was entered
+            not_digits = false; //im not 100% sure that this is what i need to check, perhaps by val of signals
+        if(id.find_first_not_of("1234567890") == std::string::npos)// check to see that a number was entered
+            not_digits = false;
+        if(num_args != 3 || sig[0] != '-' || not_digits){
+            cout << "smash error: kill: invalid arguments" << endl;
+            return nullptr;
+        }
+        stringstream st(id);
+        int id_int = 0;
+        st >> id_int;
+        JobsList::JobEntry* job = jobslist.getJobById(id_int);
+        if(!job){
+            cout << "smash error: kill: job-id" << id << "does not exist" << endl;
+            return nullptr;
+        }
+        stringstream st_sig(sig_num);
+        int sig_int = 0;
+        st_sig >> sig_int;
+        int return_val =  kill(job->cmd_pid, sig_int);
+        if (return_val){
+            perror("smash error: kill failed"); //this is just a check if killing a proccess doesnt work will remove before final issue.
+        }
+        else
+            cout << "signal number" << sig_num << "was sent to pid" << job->cmd_pid << endl;
+  }
     /*
     else if ...
     .....
