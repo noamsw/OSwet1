@@ -12,11 +12,12 @@ class Command {
 // TODO: Add your data members
  public:
   pid_t p_id;
-  int num_args; // command's name included
-  char* arguments[COMMAND_MAX_ARGS];
+  int num_args; // command's name included, curr not used
+  char* arguments[COMMAND_MAX_ARGS]; // curr not used
   int job_id; //i think we will need to store the job id in the cmd inorder to save it if it has been added than removed from the jobsList
   const char* cmd_line;
-  Command(const char* cmd_line, pid_t p_id);
+
+  Command(const char* cmd_line);
   virtual ~Command();
   virtual void execute() = 0;
   //virtual void prepare();
@@ -26,12 +27,13 @@ class Command {
 
 class BuiltInCommand : public Command {
  public:
-  BuiltInCommand(const char* cmd_line, pid_t p_id);
+  BuiltInCommand(const char* cmd_line);
   virtual ~BuiltInCommand() {}
 };
 
 class ExternalCommand : public Command {
  public:
+    // bool back_ground;
   ExternalCommand(const char* cmd_line);
   virtual ~ExternalCommand() {}
   void execute() override;
@@ -91,7 +93,7 @@ public:
     void removeFinishedJobs();
     JobEntry * getJobById(int jobId);
     void removeJobById(int jobId); // NEED TO IMPLEMENT
-    JobEntry * getLastJob(int* lastJobId); // I think we dont need this
+    // JobEntry * getLastJob(int* lastJobId); // I think we dont need this
     JobEntry *getLastStoppedJob(int *jobId);
     // TODO: Add extra methods or modify exisitng ones as needed
 };

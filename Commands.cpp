@@ -81,7 +81,7 @@ void _removeBackgroundSign(char* cmd_line) {
 // TODO: Add your implementation for classes in Commands.h 
 
 
-Command::Command(const char* cmd_line, pid_t p_id) : job_id(-1), p_id(p_id), cmd_line(cmd_line)
+Command::Command(const char* cmd_line) : job_id(-1), p_id(-1), cmd_line(cmd_line)
 {
     num_args = _parseCommandLine(cmd_line, arguments);
 }
@@ -94,24 +94,17 @@ Command::~Command()
     }
 }
 
-BuiltInCommand::BuiltInCommand(const char* cmd_line, pid_t p_id) : Command(cmd_line, p_id){}
-/*
-GetCurrDirCommand::GetCurrDirCommand(const char *cmd_line) : BuiltInCommand(cmd_line){}
-void GetCurrDirCommand::execute() {
-    char* cwd = nullptr;
-    getcwd(cwd, 0);
-    if(cwd){
-        std::string pwd(cwd);
-        std::cout << pwd << endl;
-        free(cwd);
-        return;
-    }
-    cout<< "cwd failed" <<endl;
+BuiltInCommand::BuiltInCommand(const char* cmd_line) : Command(cmd_line){}
+
+ExternalCommand::ExternalCommand(const char* cmd_line) : Command(cmd_line){}
+
+void ExternalCommand::execute()
+{
+    char new_line[COMMAND_ARGS_MAX_LENGTH];
+    strcpy(new_line, cmd_line);
+    _removeBackgroundSign(new_line);
+    execv("\bin\bash", new_line);
 }
-*/
-//SmallShell::SmallShell() {
-// TODO: add your implementation
-//}
 
 int SmallShell::get_a_job_id() {
     // will returnt the current id open for a job and increment
@@ -258,7 +251,6 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
   }
 
   else if (firstWord.compare("pwd") == 0) {
-        //return new GetCurrDirCommand(cmd_line);
         char cwd[PATH_MAX];
         getcwd(cwd, PATH_MAX);
         std::string pwd(cwd);
@@ -366,6 +358,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 
       // check if the syntax (num_args and format of the command) is valid
       // whats the meaning of "format"? make sure its a number?
+      // not_digit
       if (num_args > 2)
       {
           cout << "smash error: fg: invalid arguments" << endl;
@@ -379,7 +372,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       // find the command in the jobs list:
       int job_id;
       if (num_args == 1) // job_id isnt given
-          job_id = max_job_id - 1;
+          job_id = max_job_id - 1; // need to fix
       else // job_id is given
         job_id = atoi(arguments[1]);
 
@@ -479,7 +472,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 
       cout << cur_job->cmd << " : " << cur_job->cmd_pid << endl;
       cur_job->isStopped = false;
-      kill(cur_job->cmd_pid ,SIGCONT);
+      kill(cur_job->cmd_pid, SIGCONT);
       for (int i=0 ; i<num_args ; i++)
       {
           free(arguments[i]);
@@ -507,6 +500,11 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       exit (0);
   }
 
+  // else if special commands?
+  else
+  {
+        return new ExternalCommand(cmd_line); // check if we need to free it later or not (AND HOW?)
+  }
   return nullptr;
 }
 
@@ -515,7 +513,24 @@ void SmallShell::executeCommand(const char *cmd_line) {
   Command* cmd = CreateCommand(cmd_line);
   if (cmd != nullptr)
   {
-      cmd->execute();
+      // move fork to external::excute
+      t_pid returned_pid = fork();
+      if(returned_pid == 0) // son process
+      {
+          cmd->execute();
+      }
+      else // father process
+      {
+          if(_isBackgroundComamnd(cmd_line))
+          {
+              jobslist.addJob(cmd_line, false);
+          }
+          else // its fg
+          {
+              int wstaus;
+              waitpid(returned_pid, &wstaus, 0);
+          }
+      }
   }
   // Please note that you must fork smash process for some commands (e.g., external commands....)
 }//
