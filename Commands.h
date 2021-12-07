@@ -8,20 +8,29 @@
 #define COMMAND_ARGS_MAX_LENGTH (200)
 #define COMMAND_MAX_ARGS (20)
 
+
+void cleanup(int num_args, char* arguments)
+{
+    for (int i = 0 ; i < num_args ; i++)
+    {
+        free(arguments[i]);
+    }
+}
+
 class Command {
 // TODO: Add your data members
  public:
   pid_t p_id;
-  int num_args; // command's name included, curr not used
-  char* arguments[COMMAND_MAX_ARGS]; // curr not used
+  int num_args;
+  char* arguments[COMMAND_MAX_ARGS];
   int job_id; //i think we will need to store the job id in the cmd inorder to save it if it has been added than removed from the jobsList
   const char* cmd_line;
 
   Command(const char* cmd_line);
   virtual ~Command();
   virtual void execute() = 0;
-  //virtual void prepare();
-  //virtual void cleanup();
+  // virtual void prepare();
+  // virtual void cleanup();
   // TODO: Add your extra methods if needed
 };
 
@@ -33,7 +42,8 @@ class BuiltInCommand : public Command {
 
 class ExternalCommand : public Command {
  public:
-    // bool back_ground;
+  int num_args_no_bg;
+  char* arguments_no_bg[COMMAND_MAX_ARGS];
   ExternalCommand(const char* cmd_line);
   virtual ~ExternalCommand() {}
   void execute() override;
@@ -53,8 +63,8 @@ class RedirectionCommand : public Command {
   explicit RedirectionCommand(const char* cmd_line);
   virtual ~RedirectionCommand() {}
   void execute() override;
-  //void prepare() override;
-  //void cleanup() override;
+  // void prepare() override;
+  // void cleanup() override;
 };
 
 class ChangeDirCommand : public BuiltInCommand {

@@ -96,14 +96,36 @@ Command::~Command()
 
 BuiltInCommand::BuiltInCommand(const char* cmd_line) : Command(cmd_line){}
 
-ExternalCommand::ExternalCommand(const char* cmd_line) : Command(cmd_line){}
-
-void ExternalCommand::execute()
+ExternalCommand::ExternalCommand(const char* cmd_line) : Command(cmd_line)
 {
     char new_line[COMMAND_ARGS_MAX_LENGTH];
     strcpy(new_line, cmd_line);
-    _removeBackgroundSign(new_line);
-    execv("\bin\bash", new_line);
+    if (_isBackgroundComamnd(cmd_line))
+    {
+        _removeBackgroundSign(new_line);
+    }
+    num_args_no_bg = _parseCommandLine(new_line, arguments_no_bg);
+}
+
+void ExternalCommand::execute()
+{
+    pid_t returned_pid = fork();
+    if (returned_pid == 0) // son
+    {
+        execv("\bin\bash", arguments_no_bg);
+    }
+    else // father
+    {
+        if(_isBackgroundComamnd(cmd_line))
+        {
+            SmallShell::getInstance().jobslist.addJob(this , false);
+        }
+        else // its fg
+        {
+            int wstaus;
+            waitpid(returned_pid, &wstaus, 0); // check if options should be 0
+        }
+    }
 }
 
 int SmallShell::get_a_job_id() {
@@ -513,24 +535,8 @@ void SmallShell::executeCommand(const char *cmd_line) {
   Command* cmd = CreateCommand(cmd_line);
   if (cmd != nullptr)
   {
-      // move fork to external::excute
-      t_pid returned_pid = fork();
-      if(returned_pid == 0) // son process
-      {
-          cmd->execute();
-      }
-      else // father process
-      {
-          if(_isBackgroundComamnd(cmd_line))
-          {
-              jobslist.addJob(cmd_line, false);
-          }
-          else // its fg
-          {
-              int wstaus;
-              waitpid(returned_pid, &wstaus, 0);
-          }
-      }
+      cmd->execute();
+      delete(cmd);
   }
   // Please note that you must fork smash process for some commands (e.g., external commands....)
-}//
+}
