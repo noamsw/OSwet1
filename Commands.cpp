@@ -26,6 +26,7 @@ void cleanUp(int num_args, char** arguments)
     for (int i = 0 ; i < num_args ; i++)
     {
         free(arguments[i]);
+        arguments[i] = nullptr;
     }
 }
 
@@ -184,12 +185,12 @@ void JobsList::printJobsList() {
         time(&time_now); // im not sure how much of a diff itll make but i updated the time in the loop
         double seconds_since = difftime(it.t_entered, time_now);
         if(it.isStopped)
-            cout << "[" << it.job_id << "]" << it.cmd << ":" << it.cmd_pid << seconds_since << " secs (stopped)";
-        else   cout << "[" << it.job_id << "]" << it.cmd << ":" << it.cmd_pid << seconds_since << " secs";
+            cout << "[" << it.job_id << "]" << it.cmd << ":" << it.cmd_pid << seconds_since << " secs (stopped)" << endl;
+        else   cout << "[" << it.job_id << "]" << it.cmd << ":" << it.cmd_pid << seconds_since << " secs" << endl;
     }
 }
 
-JobsList::JobEntry* JobsList::getJobById(int jobId) {
+JobsList::JobEntry* JobsList::getJobById(int jobId) { //returns nullptr if no job exists
     JobEntry* job = nullptr;
     for (auto & it  : jobslist) {
         if(it.job_id == jobId)
@@ -347,32 +348,34 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         string id = arguments[2];
         string sig_num = arguments[1];
         sig_num = sig_num.substr(1);
-        bool not_digits = true;
+        bool sig_not_digits = true;
+        bool id_not_digits = true;
         if(sig_num.find_first_not_of("1234567890") == std::string::npos)// check to see that a number was entered
-            not_digits = false; //im not 100% sure that this is what i need to check, perhaps by val of signals
+            sig_not_digits = false; //im not 100% sure that this is what i need to check, perhaps by val of signals
         if(id.find_first_not_of("1234567890") == std::string::npos)// check to see that a number was entered
-            not_digits = false;
-        if(num_args != 3 || sig[0] != '-' || not_digits){
+            id_not_digits = false;
+        if(num_args != 3 || sig[0] != '-' || sig_not_digits || id_not_digits){
             cout << "smash error: kill: invalid arguments" << endl;
+            cleanUp(num_args, arguments);
             return nullptr;
         }
-        stringstream st(id);
-        int id_int = 0;
-        st >> id_int;
+        int id_int = atoi(arguments[2]);
         JobsList::JobEntry* job = jobslist.getJobById(id_int);
         if(!job){
             cout << "smash error: kill: job-id" << id << "does not exist" << endl;
+            cleanUp(num_args, arguments);
             return nullptr;
         }
         stringstream st_sig(sig_num);
         int sig_int = 0;
         st_sig >> sig_int;
-        int return_val =  kill(job->cmd_pid, sig_int);
+        int return_val =  kill(job->cmd_pid, sig_int);// do we need to check that this is not sig_cont
         if (return_val){
-            perror("smash error: kill failed"); //this is just a check if killing a proccess doesnt work will remove before final issue.
+            perror("smash error: kill failed");
         }
         else
             cout << "signal number" << sig_num << "was sent to pid" << job->cmd_pid << endl;
+        cleanUp(num_args, arguments);
   }
 
   else if (firstWord.compare("fg") == 0)
@@ -527,9 +530,9 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 }
 
 void SmallShell::executeCommand(const char *cmd_line) {
-  // TODO: Add your implementation here
-  Command* cmd = CreateCommand(cmd_line);
-  if (cmd != nullptr)
+    // TODO: Add your implementation here
+    Command* cmd = CreateCommand(cmd_line);
+    if (cmd != nullptr)
   {
       cmd->execute();
       delete(cmd);
