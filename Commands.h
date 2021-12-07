@@ -79,9 +79,11 @@ public:
         int job_id;//job id assigned by smash
         pid_t cmd_pid;// process pid assigned after the fork
         time_t t_entered;// time when inserted from the epoch in 1970.
-        const char* cmd_line;// the cmd of the job
+        char cmd_line[COMMAND_ARGS_MAX_LENGTH];// the cmd of the job
         bool isStopped;//was the job stopped or simply sent to the bg
-        JobEntry(int job_id, pid_t cmd_pid, time_t t_entered, const char* cmd, bool isStopped) : job_id(job_id), cmd_pid(cmd_pid), t_entered(t_entered), cmd_line(cmd), isStopped(isStopped) {}
+        JobEntry(int job_id, pid_t cmd_pid, time_t t_entered, const char* cmd, bool isStopped) : job_id(job_id), cmd_pid(cmd_pid), t_entered(t_entered), isStopped(isStopped) {
+            strcpy(cmd_line, cmd);
+        }
     };
     std::vector<JobEntry> jobslist;
 public:

@@ -124,7 +124,6 @@ void ExternalCommand::execute()
         setpgrp();
         this->p_id = getpid();
         execv("/bin/bash", bash_args);
-        cout << " debug print" << endl;
     }
     else // father
     {
@@ -167,21 +166,23 @@ void JobsList::addJob(Command* cmd, bool isStopped) {
             inserted = true;
         }
     }
-    if(!inserted)
+    if(!inserted){
         jobslist.insert(jobslist.end(), newjob);
+    }
 }
 
 void JobsList::removeFinishedJobs() {
-    int status;
+    int status, return_val;
     for(auto  it = jobslist.begin(); it != jobslist.end(); ++it) {// a little confused with variable type
-        waitpid(it->job_id, &status, WNOHANG);
-        if (status != 0) { //im ignoring status -1 which means there was an error and assuming that it was dealt with
+        return_val = waitpid(it->cmd_pid, &status, WNOHANG);
+        if (return_val != 0) { //im ignoring status -1 which means there was an error and assuming that it was dealt with
             it = jobslist.erase(it);
         }
     }
 }
 
 void JobsList::printJobsList() {
+    auto first_val = jobslist.begin();
     removeFinishedJobs();
     time_t time_now;
     time(&time_now);
@@ -190,7 +191,8 @@ void JobsList::printJobsList() {
         double seconds_since = difftime(time_now, it.t_entered);
         if(it.isStopped)
             cout << "[" << it.job_id << "]" << it.cmd_line << ":" << it.cmd_pid << " " << seconds_since << " secs (stopped)" << endl;
-        else   cout << "[" << it.job_id << "]" << it.cmd_line << ":" << it.cmd_pid << " " << seconds_since << " secs" << endl;
+        else
+            cout << "[" << it.job_id << "]" << it.cmd_line << ":" << it.cmd_pid << " " << seconds_since << " secs" << endl;
     }
 }
 
