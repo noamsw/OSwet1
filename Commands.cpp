@@ -112,6 +112,11 @@ ExternalCommand::ExternalCommand(const char* cmd_line) : Command(cmd_line)
     num_args_no_bg = _parseCommandLine(new_line, arguments_no_bg);
 }
 
+ExternalCommand::~ExternalCommand()
+{
+    cleanUp(num_args_no_bg, arguments_no_bg);
+}
+
 void ExternalCommand::execute()
 {
     pid_t returned_pid = fork();

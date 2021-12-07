@@ -36,7 +36,7 @@ class ExternalCommand : public Command {
   int num_args_no_bg;
   char* arguments_no_bg[COMMAND_MAX_ARGS];
   ExternalCommand(const char* cmd_line);
-  virtual ~ExternalCommand() {}
+  virtual ~ExternalCommand();
   void execute() override;
 };
 
