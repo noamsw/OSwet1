@@ -149,7 +149,6 @@ int SmallShell::get_a_job_id() {
     SmallShell::getInstance().max_job_id++;
     return id;
 }
-
 void JobsList::addJob(Command* cmd, bool isStopped) {
     if(cmd->job_id == -1)
     {
@@ -173,8 +172,14 @@ void JobsList::addJob(Command* cmd, bool isStopped) {
 
 void JobsList::removeFinishedJobs() {
     int status, return_val;
-    for(auto  it = jobslist.begin(); it != jobslist.end(); ++it) {// a little confused with variable type
+    for(auto  it = jobslist.begin(); it != jobslist.end(); ++it) { // a little confused with variable type
         return_val = waitpid(it->cmd_pid, &status, WNOHANG);
+        if ( it->cmd_pid ==  jobslist[jobslist.size()-1].cmd_pid){
+            if (return_val != 0) { //im ignoring status -1 which means there was an error and assuming that it was dealt with
+                jobslist.erase(it);
+            }
+            break;
+        }
         if (return_val != 0) { //im ignoring status -1 which means there was an error and assuming that it was dealt with
             it = jobslist.erase(it);
         }
@@ -379,7 +384,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
             perror("smash error: kill failed");
         }
         else
-            cout << "signal number" << sig_num << "was sent to pid" << job->cmd_pid << endl;
+            cout << "signal number " << sig_num << " was sent to pid " << job->cmd_pid << endl;
         cleanUp(num_args, arguments);
   }
 
