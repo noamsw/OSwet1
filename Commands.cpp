@@ -110,12 +110,15 @@ ExternalCommand::ExternalCommand(const char* cmd_line) : Command(cmd_line)
     {
         _removeBackgroundSign(new_line);
     }
-    num_args_no_bg = _parseCommandLine(new_line, arguments_no_bg);
+    bash_args[0] = "/bin/bash";
+    bash_args[1] = "-c";
+    bash_args[2] = new_line;
+    bash_args[3] = NULL;
 }
 
 ExternalCommand::~ExternalCommand()
 {
-    cleanUp(num_args_no_bg, arguments_no_bg);
+    // cleanUp(num_args_no_bg, arguments_no_bg);
 }
 
 void ExternalCommand::execute()
@@ -123,7 +126,10 @@ void ExternalCommand::execute()
     pid_t returned_pid = fork();
     if (returned_pid == 0) // son
     {
-        execv("\bin\bash", arguments_no_bg);
+        setpgrp();
+        cout << "sons process" << endl;
+        execv("/bin/bash", bash_args);
+        cout << "sons process 2" << endl;
     }
     else // father
     {
@@ -231,7 +237,6 @@ void JobsList::killAllJobs()
         cout << it.cmd_pid << ": " << it.cmd << endl;
         kill(it.cmd_pid, SIGKILL);
     }
-
 }
 
 SmallShell::~SmallShell()

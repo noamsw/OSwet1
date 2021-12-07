@@ -33,8 +33,7 @@ class BuiltInCommand : public Command {
 
 class ExternalCommand : public Command {
  public:
-  int num_args_no_bg;
-  char* arguments_no_bg[COMMAND_MAX_ARGS];
+  char* bash_args[4];
   ExternalCommand(const char* cmd_line);
   virtual ~ExternalCommand();
   void execute() override;
