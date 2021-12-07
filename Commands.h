@@ -35,7 +35,7 @@ class ExternalCommand : public Command {
  public:
   char* bash_args[4];
   ExternalCommand(const char* cmd_line);
-  virtual ~ExternalCommand();
+  virtual ~ExternalCommand(){};
   void execute() override;
 };
 
@@ -79,9 +79,9 @@ public:
         int job_id;//job id assigned by smash
         pid_t cmd_pid;// process pid assigned after the fork
         time_t t_entered;// time when inserted from the epoch in 1970.
-        const char* cmd;// the cmd of the job
+        const char* cmd_line;// the cmd of the job
         bool isStopped;//was the job stopped or simply sent to the bg
-        JobEntry(int job_id, pid_t cmd_pid, time_t t_entered, const char* cmd, bool isStopped) : job_id(job_id), cmd_pid(cmd_pid), t_entered(t_entered), cmd(cmd), isStopped(isStopped) {}
+        JobEntry(int job_id, pid_t cmd_pid, time_t t_entered, const char* cmd, bool isStopped) : job_id(job_id), cmd_pid(cmd_pid), t_entered(t_entered), cmd_line(cmd), isStopped(isStopped) {}
     };
     std::vector<JobEntry> jobslist;
 public:

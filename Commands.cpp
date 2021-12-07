@@ -116,31 +116,30 @@ ExternalCommand::ExternalCommand(const char* cmd_line) : Command(cmd_line)
     bash_args[3] = NULL;
 }
 
-ExternalCommand::~ExternalCommand()
-{
-    // cleanUp(num_args_no_bg, arguments_no_bg);
-}
-
 void ExternalCommand::execute()
 {
     pid_t returned_pid = fork();
     if (returned_pid == 0) // son
     {
         setpgrp();
-        cout << "sons process" << endl;
+        this->p_id = getpid();
         execv("/bin/bash", bash_args);
-        cout << "sons process 2" << endl;
+        cout << " debug print" << endl;
     }
     else // father
     {
+        this->p_id = returned_pid;
+        SmallShell::getInstance().cur_pid = returned_pid;
         if(_isBackgroundComamnd(cmd_line))
         {
             SmallShell::getInstance().jobslist.addJob(this , false);
         }
         else // its fg
         {
+            SmallShell::getInstance().p_running = true;
             int wstaus;
             waitpid(returned_pid, &wstaus, 0); // check if options should be 0
+            SmallShell::getInstance().p_running = false;
         }
     }
 }
@@ -160,7 +159,6 @@ void JobsList::addJob(Command* cmd, bool isStopped) {
     time_t time_entered;
     time(&time_entered);
     JobEntry newjob(cmd->job_id, cmd->p_id, time_entered, cmd->cmd_line, isStopped);
-
     removeFinishedJobs();
     bool inserted = false;
     for(std::vector<JobEntry>::iterator it = jobslist.begin(); it != jobslist.end(); ++it){
@@ -189,10 +187,10 @@ void JobsList::printJobsList() {
     time(&time_now);
     for(auto & it : jobslist){
         time(&time_now); // im not sure how much of a diff itll make but i updated the time in the loop
-        double seconds_since = difftime(it.t_entered, time_now);
+        double seconds_since = difftime(time_now, it.t_entered);
         if(it.isStopped)
-            cout << "[" << it.job_id << "]" << it.cmd << ":" << it.cmd_pid << seconds_since << " secs (stopped)" << endl;
-        else   cout << "[" << it.job_id << "]" << it.cmd << ":" << it.cmd_pid << seconds_since << " secs" << endl;
+            cout << "[" << it.job_id << "]" << it.cmd_line << ":" << it.cmd_pid << " " << seconds_since << " secs (stopped)" << endl;
+        else   cout << "[" << it.job_id << "]" << it.cmd_line << ":" << it.cmd_pid << " " << seconds_since << " secs" << endl;
     }
 }
 
@@ -234,7 +232,7 @@ void JobsList::killAllJobs()
 {
     for (auto & it  : jobslist)
     {
-        cout << it.cmd_pid << ": " << it.cmd << endl;
+        cout << it.cmd_pid << ": " << it.cmd_line << endl;
         kill(it.cmd_pid, SIGKILL);
     }
 }
@@ -432,7 +430,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
           return nullptr;
       }
 
-      cout << cur_job->cmd << " : " << cur_job->cmd_pid << endl;
+      cout << cur_job->cmd_line << " : " << cur_job->cmd_pid << endl;
 
       if (cur_job->isStopped)
         kill(cur_job->cmd_pid ,SIGCONT);
@@ -502,7 +500,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
           }
       }
 
-      cout << cur_job->cmd << " : " << cur_job->cmd_pid << endl;
+      cout << cur_job->cmd_line << " : " << cur_job->cmd_pid << endl;
       cur_job->isStopped = false;
       kill(cur_job->cmd_pid, SIGCONT);
       cleanUp(num_args, arguments);
