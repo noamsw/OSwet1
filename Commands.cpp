@@ -21,6 +21,14 @@ using namespace std;
 #define FUNC_EXIT()
 #endif
 
+void cleanUp(int num_args, char** arguments)
+{
+    for (int i = 0 ; i < num_args ; i++)
+    {
+        free(arguments[i]);
+    }
+}
+
 const string WHITESPACE = " \n\r\t\f\v";
 
 string _ltrim(const std::string& s)
@@ -88,10 +96,7 @@ Command::Command(const char* cmd_line) : job_id(-1), p_id(-1), cmd_line(cmd_line
 
 Command::~Command()
 {
-    for (int i = 0 ; i < num_args ; i++)
-    {
-        free(arguments[i]);
-    }
+    cleanUp(num_args, arguments);
 }
 
 BuiltInCommand::BuiltInCommand(const char* cmd_line) : Command(cmd_line){}
@@ -261,10 +266,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
           prompt = arguments[1];
           prompt.append("> ");
       }
-    for (int i=0 ; i<num_args ; i++)
-    {
-        free(arguments[i]);
-    }
+      cleanUp(num_args, arguments);
   }
 
   else if (firstWord.compare("showpid") == 0)
@@ -287,10 +289,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         if (num_args > 2)
         {
             cout << "smash error: cd: too many arguments" << endl;
-            for (int i=0 ; i<num_args ; i++)
-            {
-                free(arguments[i]);
-            }
+            cleanUp(num_args, arguments);
             return nullptr;
         }
 
@@ -299,10 +298,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
             if (prev_dir == nullptr)
             {
                 cout << "smash error: cd: OLDPWD not set" << endl;
-                for (int i=0 ; i<num_args ; i++)
-                {
-                    free(arguments[i]);
-                }
+                cleanUp(num_args, arguments);
                 return nullptr;
             }
             char tmp_path[PATH_MAX];
@@ -327,10 +323,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
             strcpy(prev_dir, cwd);
             chdir(arguments[1]);
         }
-        for (int i=0 ; i<num_args ; i++)
-        {
-            free(arguments[i]);
-        }
+        cleanUp(num_args, arguments);
         return nullptr;
   }
 
@@ -384,10 +377,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       if (num_args > 2)
       {
           cout << "smash error: fg: invalid arguments" << endl;
-          for (int i=0 ; i<num_args ; i++)
-          {
-              free(arguments[i]);
-          }
+          cleanUp(num_args, arguments);
           return nullptr;
       }
 
@@ -402,19 +392,13 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       if (num_args >= 2 && cur_job == nullptr)
       {
           cout << "smash error: fg: job-id " << job_id << " does not exist" << endl;
-          for (int i=0 ; i<num_args ; i++)
-          {
-              free(arguments[i]);
-          }
+          cleanUp(num_args, arguments);
           return nullptr;
       }
       if (num_args == 1 && cur_job == nullptr)
       {
           cout << "smash error: fg: jobs list is empty" << endl;
-          for (int i=0 ; i<num_args ; i++)
-          {
-              free(arguments[i]);
-          }
+          cleanUp(num_args, arguments);
           return nullptr;
       }
 
@@ -428,10 +412,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 
       // jobslist.removeJobById(job_id); // not implemented yet
 
-      for (int i=0 ; i<num_args ; i++)
-      {
-          free(arguments[i]);
-      }
+      cleanUp(num_args, arguments);
       return nullptr;
   }
 
@@ -445,10 +426,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       if (num_args > 2)
       {
           cout << "smash error: bg: invalid arguments" << endl;
-          for (int i=0 ; i<num_args ; i++)
-          {
-              free(arguments[i]);
-          }
+          cleanUp(num_args, arguments);
           return nullptr;
       }
 
@@ -461,10 +439,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
           if (cur_job == nullptr)
           {
               cout << "smash error: bg: there is no stopped jobs to resume" << endl;
-              for (int i=0 ; i<num_args ; i++)
-              {
-                  free(arguments[i]);
-              }
+              cleanUp(num_args, arguments);
               return nullptr;
           }
       }
@@ -475,19 +450,13 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
           if (cur_job == nullptr)
           {
               cout << "smash error: bg: job-id " << job_id << " does not exist" << endl;
-              for (int i=0 ; i<num_args ; i++)
-              {
-                  free(arguments[i]);
-              }
+              cleanUp(num_args, arguments);
               return nullptr;
           }
           if (!cur_job->isStopped)
           {
               cout << "smash error: bg: job-id " << job_id << " is already running in the background" << endl;
-              for (int i=0 ; i<num_args ; i++)
-              {
-                  free(arguments[i]);
-              }
+              cleanUp(num_args, arguments);
               return nullptr;
           }
       }
@@ -495,10 +464,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       cout << cur_job->cmd << " : " << cur_job->cmd_pid << endl;
       cur_job->isStopped = false;
       kill(cur_job->cmd_pid, SIGCONT);
-      for (int i=0 ; i<num_args ; i++)
-      {
-          free(arguments[i]);
-      }
+      cleanUp(num_args, arguments);
       return nullptr;
   }
 
@@ -515,10 +481,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
               jobslist.killAllJobs();
           }
       }
-      for (int i=0 ; i<num_args ; i++)
-      {
-          free(arguments[i]);
-      }
+      cleanUp(num_args, arguments);
       exit (0);
   }
 

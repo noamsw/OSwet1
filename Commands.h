@@ -8,15 +8,6 @@
 #define COMMAND_ARGS_MAX_LENGTH (200)
 #define COMMAND_MAX_ARGS (20)
 
-
-void cleanup(int num_args, char* arguments)
-{
-    for (int i = 0 ; i < num_args ; i++)
-    {
-        free(arguments[i]);
-    }
-}
-
 class Command {
 // TODO: Add your data members
  public:
