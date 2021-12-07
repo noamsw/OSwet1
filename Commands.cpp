@@ -198,13 +198,17 @@ JobsList::JobEntry* JobsList::getJobById(int jobId) {
     return job;
 }
 
-/*
 void JobsList::removeJobById(int jobId)
 {
-    it
-    jobslist.erase(it);
+    for(auto  it = jobslist.begin(); it != jobslist.end(); ++it)
+    {
+        if(it->job_id == jobId)
+        {
+            jobslist.erase(it);
+            return;
+        }
+    }
 }
-*/
 
 JobsList::JobEntry* JobsList::getLastStoppedJob(int *jobId)
 {
@@ -376,9 +380,19 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       char* arguments[COMMAND_MAX_ARGS];
       int num_args = _parseCommandLine(new_line, arguments);
 
-      // check if the syntax (num_args and format of the command) is valid
-      // whats the meaning of "format"? make sure its a number?
-      // not_digit
+      if (num_args == 2)
+      {
+          bool bad_format = true;
+          string job_id_s = arguments[1];
+          if(job_id_s.find_first_not_of("1234567890") == std::string::npos)
+              bad_format= false;
+          if(bad_format)
+          {
+              cout << "smash error: fg: invalid arguments" << endl;
+              cleanUp(num_args, arguments);
+              return nullptr;
+          }
+      }
       if (num_args > 2)
       {
           cout << "smash error: fg: invalid arguments" << endl;
@@ -389,7 +403,10 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       // find the command in the jobs list:
       int job_id;
       if (num_args == 1) // job_id isnt given
-          job_id = max_job_id - 1; // need to fix
+      {
+          int vector_size = jobslist.jobslist.size();
+          job_id = jobslist.jobslist[vector_size-1].job_id;
+      }
       else // job_id is given
         job_id = atoi(arguments[1]);
 
@@ -415,7 +432,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       int wstaus;
       waitpid(cur_job->cmd_pid, &wstaus, 0); // is 0 the right value for the "options" arg?
 
-      // jobslist.removeJobById(job_id); // not implemented yet
+      jobslist.removeJobById(job_id);
 
       cleanUp(num_args, arguments);
       return nullptr;
@@ -426,8 +443,19 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       char* arguments[COMMAND_MAX_ARGS];
       int num_args = _parseCommandLine(new_line, arguments);
 
-      // check if the syntax (num_args and format of the command) is valid
-      // whats the meaning of "format"? make sure its a number?
+      if (num_args == 2)
+      {
+          bool bad_format = true;
+          string job_id_s = arguments[1];
+          if(job_id_s.find_first_not_of("1234567890") == std::string::npos)
+              bad_format= false;
+          if(bad_format)
+          {
+              cout << "smash error: bg: invalid arguments" << endl;
+              cleanUp(num_args, arguments);
+              return nullptr;
+          }
+      }
       if (num_args > 2)
       {
           cout << "smash error: bg: invalid arguments" << endl;
