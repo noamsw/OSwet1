@@ -136,6 +136,7 @@ void ExternalCommand::execute()
         else // its fg
         {
             SmallShell::getInstance().p_running = true;
+            SmallShell::getInstance().cmd_running = this;
             int wstaus;
             waitpid(returned_pid, &wstaus, 0); // check if options should be 0
             SmallShell::getInstance().p_running = false;
