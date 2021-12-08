@@ -136,7 +136,7 @@ void ExternalCommand::execute()
         else // its fg
         {
             SmallShell::getInstance().p_running = true;
-            SmallShell::getInstance().cmd_running = this;
+            strcpy(SmallShell::getInstance().cur_cmdline, cmd_line);
             int wstaus;
             waitpid(returned_pid, &wstaus, 0); // check if options should be 0
             SmallShell::getInstance().p_running = false;
@@ -444,8 +444,11 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         kill(cur_job->cmd_pid ,SIGCONT);
 
       int wstaus;
+      SmallShell::getInstance().p_running = true;
+      SmallShell::getInstance().cur_pid = cur_job->cmd_pid;
+      strcpy(SmallShell::getInstance().cur_cmdline,cur_job->cmd_line);
       waitpid(cur_job->cmd_pid, &wstaus, 0); // is 0 the right value for the "options" arg?
-
+      SmallShell::getInstance().p_running = false;
       jobslist.removeJobById(job_id);
 
       cleanUp(num_args, arguments);
@@ -545,6 +548,7 @@ void SmallShell::executeCommand(const char *cmd_line) {
     Command* cmd = CreateCommand(cmd_line);
     if (cmd != nullptr)
   {
+      strcpy(cur_cmdline, cmd_line);
       cmd->execute();
       delete(cmd);
   }
