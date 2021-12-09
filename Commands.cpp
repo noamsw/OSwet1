@@ -127,19 +127,15 @@ void ExternalCommand::execute()
     }
     else // father
     {
-        this->p_id = returned_pid;
-        SmallShell::getInstance().cur_pid = returned_pid;
         if(_isBackgroundComamnd(cmd_line))
         {
             SmallShell::getInstance().jobslist.addJob(this , false);
         }
         else // its fg
         {
-            SmallShell::getInstance().p_running = true;
-            strcpy(SmallShell::getInstance().cur_cmdline, cmd_line);
             int wstaus;
             waitpid(returned_pid, &wstaus, 0); // check if options should be 0
-            SmallShell::getInstance().p_running = false;
+
         }
     }
 }
@@ -444,12 +440,14 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         kill(cur_job->cmd_pid ,SIGCONT);
 
       int wstaus;
+      jobslist.removeJobById(job_id);
+      SmallShell::getInstance().cur_cmd = SmallShell::CreateCommand(cur_job->cmd_line);
       SmallShell::getInstance().p_running = true;
-      SmallShell::getInstance().cur_pid = cur_job->cmd_pid;
-      strcpy(SmallShell::getInstance().cur_cmdline,cur_job->cmd_line);
+      SmallShell::getInstance().cur_cmd->job_id = cur_job->job_id;// so that we dont update a new job_id
       waitpid(cur_job->cmd_pid, &wstaus, 0); // is 0 the right value for the "options" arg?
       SmallShell::getInstance().p_running = false;
-      jobslist.removeJobById(job_id);
+      delete(SmallShell::getInstance().cur_cmd);
+      SmallShell::getInstance().cur_cmd  = nullptr;
 
       cleanUp(num_args, arguments);
       return nullptr;
@@ -548,8 +546,11 @@ void SmallShell::executeCommand(const char *cmd_line) {
     Command* cmd = CreateCommand(cmd_line);
     if (cmd != nullptr)
   {
-      strcpy(cur_cmdline, cmd_line);
+      SmallShell::getInstance().p_running = true;
+      SmallShell::getInstance().cur_cmd = cmd;
       cmd->execute();
+      SmallShell::getInstance().p_running = false;
+      SmallShell::getInstance().cur_cmd = nullptr;
       delete(cmd);
   }
   // Please note that you must fork smash process for some commands (e.g., external commands....)
