@@ -174,20 +174,16 @@ void JobsList::addJob(Command* cmd, bool isStopped) {
 void JobsList::removeFinishedJobs() {
     int status, return_val;
     for(auto  it = jobslist.begin(); it != jobslist.end(); ++it) { // a little confused with variable type
-        cout << " removedfinishedjobs debug print- job_id: " << it->job_id << " is still in the list, with pid : " << it->cmd_pid  << endl;
         return_val = waitpid(it->cmd_pid, &status, WNOHANG);
-        if ( it->cmd_pid ==  jobslist[jobslist.size()-1].cmd_pid){
-            if (return_val != 0) { //im ignoring status -1 which means there was an error and assuming that it was dealt with
-
-                cout << " removefinished jobs debug print- job: " << it->job_id << " was erased at the end " << endl;
-                cout << " return val is " << return_val << endl;
+        if ( it->cmd_pid ==  jobslist[jobslist.size()-1].cmd_pid)
+        {
+            if (return_val != 0)  //im ignoring status -1 which means there was an error and assuming that it was dealt with
+            {
                 jobslist.erase(it);
             }
             break;
         }
         if (return_val != 0) { //im ignoring status -1 which means there was an error and assuming that it was dealt with
-            cout << " return val is " << return_val << endl;
-            cout << " removefinished jobs debug print- job: " << it->job_id << " was erased before end " << endl;
             it = jobslist.erase(it);
         }
     }
@@ -455,7 +451,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       SmallShell::getInstance().cur_cmd->p_id = cur_job_pid; //so that we get the correct process to kill
       SmallShell::getInstance().cur_cmd->job_id = job_id;// so that we dont update a new job_id
       SmallShell::getInstance().p_running = true;
-      waitpid(cur_job->cmd_pid, &wstaus, 0); // is 0 the right value for the "options" arg?
+      waitpid(cur_job_pid, &wstaus, 0); // is 0 the right value for the "options" arg?
       SmallShell::getInstance().p_running = false;
       delete(SmallShell::getInstance().cur_cmd);
       SmallShell::getInstance().cur_cmd  = nullptr;
