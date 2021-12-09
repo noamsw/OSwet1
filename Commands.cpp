@@ -119,6 +119,7 @@ ExternalCommand::ExternalCommand(const char* cmd_line) : Command(cmd_line)
 void ExternalCommand::execute()
 {
     pid_t returned_pid = fork();
+    this->p_id = returned_pid;
     if (returned_pid == 0) // son
     {
         setpgrp();
@@ -133,9 +134,12 @@ void ExternalCommand::execute()
         }
         else // its fg
         {
+            SmallShell::getInstance().cur_cmd = this;
+            SmallShell::getInstance().p_running = true;
             int wstaus;
             waitpid(returned_pid, &wstaus, 0); // check if options should be 0
-
+            SmallShell::getInstance().p_running = false;
+            SmallShell::getInstance().cur_cmd = nullptr;
         }
     }
 }
@@ -546,11 +550,7 @@ void SmallShell::executeCommand(const char *cmd_line) {
     Command* cmd = CreateCommand(cmd_line);
     if (cmd != nullptr)
   {
-      SmallShell::getInstance().p_running = true;
-      SmallShell::getInstance().cur_cmd = cmd;
       cmd->execute();
-      SmallShell::getInstance().p_running = false;
-      SmallShell::getInstance().cur_cmd = nullptr;
       delete(cmd);
   }
   // Please note that you must fork smash process for some commands (e.g., external commands....)
