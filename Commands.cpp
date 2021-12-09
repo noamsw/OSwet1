@@ -164,6 +164,7 @@ void JobsList::addJob(Command* cmd, bool isStopped) {
         if(it->job_id > newjob.job_id){
             jobslist.insert(it, newjob);
             inserted = true;
+            break;
         }
     }
     if(!inserted){
