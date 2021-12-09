@@ -165,11 +165,10 @@ class SmallShell {
   char* prev_dir;
   std::string prompt;
   bool p_running; //flag to see if there is a process running inside the shell
-  pid_t cur_pid; //the pid of the current pid running
   Command *cur_cmd;
   JobsList jobslist; //switched from std::vector for BG and stopped jobs
 protected: //how to make sure that only a singleton is created
-  SmallShell(const std::string& prompt = "smash> ") : max_job_id(1), prev_dir(nullptr), prompt(prompt),p_running(false), cur_pid(-1), cur_cmd(nullptr) {} // check if ok i initialized the cur_pid to -1 but it is arbitrary i think
+  SmallShell(const std::string& prompt = "smash> ") : max_job_id(1), prev_dir(nullptr), prompt(prompt),p_running(false), cur_cmd(nullptr) {} // check if ok i initialized the cur_pid to -1 but it is arbitrary i think
 public:
   Command *CreateCommand(const char* cmd_line);
   int get_a_job_id();  // will return an id that should be assigned to a new job

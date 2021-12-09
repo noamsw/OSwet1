@@ -6,3 +6,4 @@ cd /home
 pwd
 cd -
 pwd
+quit kill
