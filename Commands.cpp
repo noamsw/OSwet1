@@ -89,6 +89,30 @@ void _removeBackgroundSign(char* cmd_line) {
 
 // TODO: Add your implementation for classes in Commands.h 
 
+int checkSpecial(char** arguments, int num_args)
+{
+    for (int i = 0; i < num_args ; i++)
+    {
+        if(strcmp(arguments[i], ">") == 0)
+            return 1;
+
+        if(strcmp(arguments[i], ">>") == 0)
+            return 2;
+
+        // if | |&..
+    }
+}
+
+void splitSpecialCommand(char* cmd_line, char* first_part, char* special_sign, char* sec_part)
+{
+    char* token = strtok(cmd_line, special_sign);
+    strcpy(first_part, token);
+    while(token)
+    {
+        strcpy(sec_part, token);
+        token = strtok(NULL, special_sign);
+    }
+}
 
 Command::Command(const char* cmd_line) : p_id(-1), job_id(-1), cmd_line(cmd_line)
 {
@@ -143,6 +167,18 @@ void ExternalCommand::execute()
         }
     }
 }
+
+void RedirectionCommand::execute()
+{
+    int fd = open (file_name, O_WR|O_CREAT, 0666); // check flags
+    // edit e file_name with _parse
+    open(file_name)
+    // edit the file descriptor [change cout (and cerr?) to file_name]
+    // new_cmd = createCommand(cmd_line_no_rd)
+    // if(new_cmd != nullptr) : new_cmd.execute()
+    // reset file descriptor
+}
+
 
 int SmallShell::get_a_job_id() {
     // will returnt the current id open for a job and increment
@@ -276,6 +312,28 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
           _removeBackgroundSign(new_line);
       }
   }
+
+  char* arguments[COMMAND_MAX_ARGS];
+  int num_args = _parseCommandLine(cmd_line, arguments);
+  int special_type = checkSpecial(arguments, num_args);
+  cleanUp(num_args, arguments); // check if argumens[] is needed later
+  if (special_type == 1 or special_type == 2) // [redirection]: (1 for >) (2 for >>)
+      {
+      bool append = false;
+      char special_sign[] = ">";
+      if (special_type == 2)
+      {
+          append = true;
+          special_sign = ">>"
+      }
+      char cmd_no_rd[COMMAND_ARGS_MAX_LENGTH];
+      char file_name[COMMAND_ARGS_MAX_LENGTH];
+      splitSpecialCommand(cmd_line, cmd_no_rd, special_sign, file_name);
+      return new RedirectionCommand cmd(cmd_line, cmd_no_rd, file_name, append);
+  }
+
+  // if IO
+  // if HEAD
 
   if (firstWord.compare("chprompt") == 0)
   {
