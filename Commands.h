@@ -50,7 +50,15 @@ class PipeCommand : public Command {
 class RedirectionCommand : public Command {
  // TODO: Add your data members
  public:
-  explicit RedirectionCommand(const char* cmd_line);
+  char cmd_line_no_rd[COMMAND_ARGS_MAX_LENGTH];
+  char file_name[COMMAND_ARGS_MAX_LENGTH];
+  bool append; // true if the command is (>>)
+  explicit RedirectionCommand(const char* cmd_line, char* c_l_n_rd, char* f_n, bool append) :
+        Command(cmd_line), append(append)
+  {
+      strcpy(cmd_line_no_rd, c_l_n_rd);
+      strcpy(file_name, f_n);
+  }
   virtual ~RedirectionCommand() {}
   void execute() override;
   // void prepare() override;
