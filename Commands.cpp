@@ -90,7 +90,7 @@ void _removeBackgroundSign(char* cmd_line) {
 // TODO: Add your implementation for classes in Commands.h 
 
 
-Command::Command(const char* cmd_line) : job_id(-1), p_id(-1), cmd_line(cmd_line)
+Command::Command(const char* cmd_line) : p_id(-1), job_id(-1), cmd_line(cmd_line)
 {
     num_args = _parseCommandLine(cmd_line, arguments);
 }
