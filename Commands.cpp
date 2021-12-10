@@ -90,7 +90,7 @@ void _removeBackgroundSign(char* cmd_line) {
 // TODO: Add your implementation for classes in Commands.h 
 
 
-Command::Command(const char* cmd_line) : job_id(-1), p_id(-1), cmd_line(cmd_line)
+Command::Command(const char* cmd_line) : p_id(-1), job_id(-1), cmd_line(cmd_line)
 {
     num_args = _parseCommandLine(cmd_line, arguments);
 }
@@ -137,7 +137,7 @@ void ExternalCommand::execute()
             SmallShell::getInstance().cur_cmd = this;
             SmallShell::getInstance().p_running = true;
             int wstaus;
-            waitpid(returned_pid, &wstaus, 0); // check if options should be 0
+            waitpid(returned_pid, &wstaus, WSTOPPED); // check if options should be 0
             SmallShell::getInstance().p_running = false;
             SmallShell::getInstance().cur_cmd = nullptr;
         }
@@ -447,12 +447,14 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 
       int wstaus;
       pid_t cur_job_pid = cur_job->cmd_pid;
+      char cur_job_cmd_line[COMMAND_ARGS_MAX_LENGTH];
+      strcpy(cur_job_cmd_line, cur_job->cmd_line);
       jobslist.removeJobById(job_id);
-      SmallShell::getInstance().cur_cmd = SmallShell::CreateCommand(cur_job->cmd_line);
+      SmallShell::getInstance().cur_cmd = SmallShell::CreateCommand(cur_job_cmd_line);
       SmallShell::getInstance().cur_cmd->p_id = cur_job_pid; //so that we get the correct process to kill
       SmallShell::getInstance().cur_cmd->job_id = job_id;// so that we dont update a new job_id
       SmallShell::getInstance().p_running = true;
-      waitpid(cur_job_pid, &wstaus, 0); // is 0 the right value for the "options" arg?
+      waitpid(cur_job_pid, &wstaus, WSTOPPED); // is 0 the right value for the "options" arg?
       SmallShell::getInstance().p_running = false;
       delete(SmallShell::getInstance().cur_cmd);
       SmallShell::getInstance().cur_cmd  = nullptr;
