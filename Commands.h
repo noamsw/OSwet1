@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <linux/limits.h>
+#include <fcntl.h>
 
 #define COMMAND_ARGS_MAX_LENGTH (200)
 #define COMMAND_MAX_ARGS (20)
@@ -42,7 +43,15 @@ class ExternalCommand : public Command {
 class PipeCommand : public Command {
   // TODO: Add your data members
  public:
-  PipeCommand(const char* cmd_line);
+  char first_command[COMMAND_ARGS_MAX_LENGTH];
+  char second_command[COMMAND_ARGS_MAX_LENGTH];
+  bool err_pipe; // true if the command is |&
+  PipeCommand(const char* cmd_line, char* first_part, char* second_part, bool err_pipe_) :
+          Command(cmd_line), err_pipe(err_pipe_)
+  {
+      strcpy(first_command, first_part);
+      strcpy(second_command, second_part);
+  }
   virtual ~PipeCommand() {}
   void execute() override;
 };

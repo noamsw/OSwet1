@@ -99,8 +99,13 @@ int checkSpecial(char** arguments, int num_args)
         if(strcmp(arguments[i], ">>") == 0)
             return 2;
 
-        // if | |&..
+        if(strcmp(arguments[i], "|") == 0)
+            return 3;
+
+        if(strcmp(arguments[i], "|&") == 0)
+            return 4;
     }
+    return 0; // cmd isnt special
 }
 
 void splitSpecialCommand(char* cmd_line, char* first_part, char* special_sign, char* sec_part)
@@ -170,15 +175,27 @@ void ExternalCommand::execute()
 
 void RedirectionCommand::execute()
 {
-    int fd = open (file_name, O_WR|O_CREAT, 0666); // check flags
-    // edit e file_name with _parse
-    open(file_name)
-    // edit the file descriptor [change cout (and cerr?) to file_name]
-    // new_cmd = createCommand(cmd_line_no_rd)
-    // if(new_cmd != nullptr) : new_cmd.execute()
+    close(1); // closing STDOUT in the FDT. should we also close STDERR(?)
+    int fd; // 1. check if 0666 is needed. 2. should we edit the file_name with _parse?
+    if (append)
+        fd = open(file_name, O_WRONLY|O_CREAT|O_APPEND, 0666);
+    else
+        fd = open(file_name, O_WRONLY|O_CREAT, 0666);
+
+    dup(fd); // setting FDT[1] to file_name
+    Command* new_cmd = SmallShell::getInstance().CreateCommand(cmd_line_no_rd);
+    if(new_cmd != nullptr)
+    {
+        new_cmd->execute();
+        delete new_cmd;
+    }
     // reset file descriptor
+    close(1);
 }
 
+void PipeCommand::execute()
+{
+}
 
 int SmallShell::get_a_job_id() {
     // will returnt the current id open for a job and increment
@@ -324,15 +341,20 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       if (special_type == 2)
       {
           append = true;
-          special_sign = ">>"
+          strcpy(special_sign, ">>");
       }
       char cmd_no_rd[COMMAND_ARGS_MAX_LENGTH];
       char file_name[COMMAND_ARGS_MAX_LENGTH];
-      splitSpecialCommand(cmd_line, cmd_no_rd, special_sign, file_name);
-      return new RedirectionCommand cmd(cmd_line, cmd_no_rd, file_name, append);
+      char non_const_cmd_line[COMMAND_ARGS_MAX_LENGTH];
+      strcpy(non_const_cmd_line, cmd_line);
+      splitSpecialCommand(non_const_cmd_line, cmd_no_rd, special_sign, file_name);
+      return new RedirectionCommand(cmd_line, cmd_no_rd, file_name, append);
   }
 
-  // if IO
+  if ((special_type == 3 or special_type == 4)) // [pipes]: (3 for |) (4 for |&)
+  {
+
+  }
   // if HEAD
 
   if (firstWord.compare("chprompt") == 0)
@@ -359,6 +381,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         char cwd[PATH_MAX];
         getcwd(cwd, PATH_MAX);
         std::string pwd(cwd);
+        // printf("%s", cwd);
         std::cout << pwd << endl;
     }
 
