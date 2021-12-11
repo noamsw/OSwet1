@@ -198,6 +198,31 @@ void RedirectionCommand::execute()
 
 void PipeCommand::execute()
 {
+    int fd[2]; // fd[0] == read, fd[1] == write
+    pipe(fd);
+
+    // fork_1
+    if (fork() == 0) // first son, first cmd
+    {
+        dup2(fd[1], 1);
+        close(fd[0]);
+        close(fd[1]);
+        command* first_cmd = SmallShell::getInstance().CreateCommand(---
+        execute();
+        // writing to the pipe
+        // exit();
+    }
+    else // father
+    {
+        if (fork() == 0) // second son. second cmd
+        {
+            dup2(fd[0], 0);
+            close(fd[1]);
+            close(fd[0]);
+            // reading from the pipe
+        }
+
+    }
 }
 
 int SmallShell::get_a_job_id() {
@@ -356,7 +381,19 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 
   if ((special_type == 3 or special_type == 4)) // [pipes]: (3 for |) (4 for |&)
   {
-
+      bool err_flag = false;
+      char special_sign[] = "|";
+      if (special_type == 4)
+      {
+          err_flag = true;
+          strcpy(special_sign, "|&");
+      }
+      char first_command[COMMAND_ARGS_MAX_LENGTH];
+      char second_command[COMMAND_ARGS_MAX_LENGTH];
+      char non_const_cmd_line[COMMAND_ARGS_MAX_LENGTH];
+      strcpy(non_const_cmd_line, cmd_line);
+      splitSpecialCommand(non_const_cmd_line, first_command, special_sign, second_command);
+      return new PipeCommand(cmd_line, first_command, second_command, err_flag);
   }
   // if HEAD
 
