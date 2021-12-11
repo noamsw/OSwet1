@@ -46,12 +46,7 @@ class PipeCommand : public Command {
   char first_command[COMMAND_ARGS_MAX_LENGTH];
   char second_command[COMMAND_ARGS_MAX_LENGTH];
   bool err_pipe; // true if the command is |&
-  PipeCommand(const char* cmd_line, char* first_part, char* second_part, bool err_pipe_) :
-          Command(cmd_line), err_pipe(err_pipe_)
-  {
-      strcpy(first_command, first_part);
-      strcpy(second_command, second_part);
-  }
+  PipeCommand(const char* cmd_line, char* first_part, char* second_part, bool err_pipe_) ;
   virtual ~PipeCommand() {}
   void execute() override;
 };
@@ -62,12 +57,7 @@ class RedirectionCommand : public Command {
   char cmd_line_no_rd[COMMAND_ARGS_MAX_LENGTH];
   char file_name[COMMAND_ARGS_MAX_LENGTH];
   bool append; // true if the command is (>>)
-  explicit RedirectionCommand(const char* cmd_line, char* c_l_n_rd, char* f_n, bool append) :
-        Command(cmd_line), append(append)
-  {
-      strcpy(cmd_line_no_rd, c_l_n_rd);
-      strcpy(file_name, f_n);
-  }
+  explicit RedirectionCommand(const char* cmd_line, char* c_l_n_rd, char* f_n, bool append);
   virtual ~RedirectionCommand() {}
   void execute() override;
   // void prepare() override;

@@ -145,6 +145,22 @@ ExternalCommand::ExternalCommand(const char* cmd_line) : Command(cmd_line)
     bash_args[3] = NULL;
 }
 
+PipeCommand::PipeCommand(const char* cmd_line, char* first_part, char* second_part, bool err_pipe_) :
+        Command(cmd_line), err_pipe(err_pipe_)
+{
+    _removeBackgroundSign(first_part);
+    _removeBackgroundSign(second_part);
+    strcpy(first_command, first_part);
+    strcpy(second_command, second_part);
+}
+
+RedirectionCommand::RedirectionCommand(const char* cmd_line, char* c_l_n_rd, char* f_n, bool append) :
+        Command(cmd_line), append(append)
+{
+    strcpy(cmd_line_no_rd, c_l_n_rd);
+    _removeBackgroundSign(cmd_line_no_rd);
+    strcpy(file_name, f_n);
+}
 void ExternalCommand::execute()
 {
     pid_t returned_pid = fork();
@@ -200,29 +216,42 @@ void PipeCommand::execute()
 {
     int fd[2]; // fd[0] == read, fd[1] == write
     pipe(fd);
-
+    int first_son, sec_son;
     // fork_1
-    if (fork() == 0) // first son, first cmd
+    if ((first_son = fork()) == 0) // first son, first cmd
     {
-        dup2(fd[1], 1);
+        if(err_pipe)
+            dup2(fd[1], 2);
+        else
+            dup2(fd[1], 1);
         close(fd[0]);
         close(fd[1]);
-        command* first_cmd = SmallShell::getInstance().CreateCommand(---
-        execute();
-        // writing to the pipe
-        // exit();
+        Command* first_cmd = SmallShell::getInstance().CreateCommand(first_command);
+        if(first_cmd){
+            first_cmd->execute();
+            delete(first_cmd);
+        }
+        exit(0);
     }
     else // father
     {
-        if (fork() == 0) // second son. second cmd
+        if ((sec_son = fork()) == 0) // second son. second cmd
         {
             dup2(fd[0], 0);
             close(fd[1]);
             close(fd[0]);
-            // reading from the pipe
+            Command* second_cmd = SmallShell::getInstance().CreateCommand(second_command);
+            if(second_cmd)
+            {
+                second_cmd->execute();
+                delete(second_cmd);
+            }
+            exit(0);
         }
-
     }
+    int status;
+    waitpid(first_son, &status, WEXITED);
+    waitpid(sec_son, &status, WEXITED);
 }
 
 int SmallShell::get_a_job_id() {
@@ -350,7 +379,8 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
   // if the command is builtin it cant be BG
   // remove "&' if exists
   if (firstWord == "chprompt" || firstWord == "showpid" || firstWord == "pwd" || firstWord == "cd" ||
-          firstWord == "jobs" || firstWord == "kill" || firstWord == "fg" || firstWord == "bg" || firstWord == "quit")
+          firstWord == "jobs" || firstWord == "kill" || firstWord == "fg" ||
+          firstWord == "bg" || firstWord == "quit" || firstWord == "head")
   {
       if (_isBackgroundComamnd(cmd_line))
       {
@@ -365,7 +395,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
   if (special_type == 1 or special_type == 2) // [redirection]: (1 for >) (2 for >>)
       {
       bool append = false;
-      char special_sign[] = ">";
+      char special_sign[COMMAND_ARGS_MAX_LENGTH] = ">";
       if (special_type == 2)
       {
           append = true;
@@ -378,11 +408,10 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       splitSpecialCommand(non_const_cmd_line, cmd_no_rd, special_sign, file_name);
       return new RedirectionCommand(cmd_line, cmd_no_rd, file_name, append);
   }
-
   if ((special_type == 3 or special_type == 4)) // [pipes]: (3 for |) (4 for |&)
   {
       bool err_flag = false;
-      char special_sign[] = "|";
+      char special_sign[COMMAND_ARGS_MAX_LENGTH] = "|";
       if (special_type == 4)
       {
           err_flag = true;
@@ -664,7 +693,51 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       exit (0);
   }
 
-  // else if special commands?
+  else if (firstWord.compare("head") == 0){
+      char* arguments[COMMAND_MAX_ARGS];
+      int num_args = _parseCommandLine(cmd_line, arguments);
+      if ( num_args == 1 ){
+          cout << "smash error: head: not enough arguments" << endl;
+          cleanUp(num_args, arguments);
+          return nullptr;
+      }
+      int num_lines;
+      FILE* fd;
+      if(num_args ==  3){
+          string str_lines = arguments[1];
+          str_lines = str_lines.substr(1);
+          stringstream st_lines(str_lines);
+          st_lines >> num_lines;
+          fd = fopen(arguments[2], "r");
+      }
+      else{
+          num_lines = 10;
+          fd = fopen(arguments[1], "r");
+      }
+      if(!fd){
+          perror("smash error: open failed");
+          cleanUp(num_args, arguments);
+          return nullptr;
+      }
+      char *line = nullptr;
+      size_t len = 0;
+      ssize_t read;
+      for (int i = 0 ; i < num_lines; i++) {
+          if(feof(fd))
+            break;
+          if(getline(&line, &len,  fd) == -1){
+              perror("smash error: read failed"); //if is - then we need to print an error
+              cleanUp(num_args, arguments);
+              return nullptr;
+          }
+          cout << line;
+      }
+      if(line)
+        free(line);
+      fclose(fd);
+      cleanUp(num_args, arguments);
+      return nullptr;
+  }
   else
   {
         return new ExternalCommand(cmd_line); // check if we need to free it later or not (AND HOW?)
