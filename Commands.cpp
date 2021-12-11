@@ -175,6 +175,7 @@ void ExternalCommand::execute()
 
 void RedirectionCommand::execute()
 {
+    int saved_stdout = dup(1);
     close(1); // closing STDOUT in the FDT. should we also close STDERR(?)
     int fd; // 1. check if 0666 is needed. 2. should we edit the file_name with _parse?
     if (append)
@@ -190,7 +191,9 @@ void RedirectionCommand::execute()
         delete new_cmd;
     }
     // reset file descriptor
-    close(1);
+    close(fd);
+    dup(saved_stdout);
+    close(saved_stdout); // not sure about it
 }
 
 void PipeCommand::execute()
