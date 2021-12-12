@@ -450,7 +450,6 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         char cwd[PATH_MAX];
         getcwd(cwd, PATH_MAX);
         std::string pwd(cwd);
-        // printf("%s", cwd);
         std::cout << pwd << endl;
     }
 
@@ -461,7 +460,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 
         if (num_args > 2)
         {
-            cout << "smash error: cd: too many arguments" << endl;
+            cerr << "smash error: cd: too many arguments" << endl;
             cleanUp(num_args, arguments);
             return nullptr;
         }
@@ -470,7 +469,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         {
             if (prev_dir == nullptr)
             {
-                cout << "smash error: cd: OLDPWD not set" << endl;
+                cerr << "smash error: cd: OLDPWD not set" << endl;
                 cleanUp(num_args, arguments);
                 return nullptr;
             }
@@ -518,14 +517,14 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         if(id.find_first_not_of("1234567890") == std::string::npos)// check to see that a number was entered
             id_not_digits = false;
         if(num_args != 3 || sig[0] != '-' || sig_not_digits || id_not_digits){
-            cout << "smash error: kill: invalid arguments" << endl;
+            cerr << "smash error: kill: invalid arguments" << endl;
             cleanUp(num_args, arguments);
             return nullptr;
         }
         int id_int = atoi(arguments[2]);
         JobsList::JobEntry* job = jobslist.getJobById(id_int);
         if(!job){
-            cout << "smash error: kill: job-id" << id << "does not exist" << endl;
+            cerr << "smash error: kill: job-id" << id << "does not exist" << endl;
             cleanUp(num_args, arguments);
             return nullptr;
         }
@@ -554,14 +553,14 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
               bad_format= false;
           if(bad_format)
           {
-              cout << "smash error: fg: invalid arguments" << endl;
+              cerr << "smash error: fg: invalid arguments" << endl;
               cleanUp(num_args, arguments);
               return nullptr;
           }
       }
       if (num_args > 2)
       {
-          cout << "smash error: fg: invalid arguments" << endl;
+          cerr << "smash error: fg: invalid arguments" << endl;
           cleanUp(num_args, arguments);
           return nullptr;
       }
@@ -579,13 +578,13 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       JobsList::JobEntry* cur_job = jobslist.getJobById(job_id);
       if (num_args >= 2 && cur_job == nullptr)
       {
-          cout << "smash error: fg: job-id " << job_id << " does not exist" << endl;
+          cerr << "smash error: fg: job-id " << job_id << " does not exist" << endl;
           cleanUp(num_args, arguments);
           return nullptr;
       }
       if (num_args == 1 && cur_job == nullptr)
       {
-          cout << "smash error: fg: jobs list is empty" << endl;
+          cerr << "smash error: fg: jobs list is empty" << endl;
           cleanUp(num_args, arguments);
           return nullptr;
       }
@@ -626,14 +625,14 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
               bad_format= false;
           if(bad_format)
           {
-              cout << "smash error: bg: invalid arguments" << endl;
+              cerr << "smash error: bg: invalid arguments" << endl;
               cleanUp(num_args, arguments);
               return nullptr;
           }
       }
       if (num_args > 2)
       {
-          cout << "smash error: bg: invalid arguments" << endl;
+          cerr << "smash error: bg: invalid arguments" << endl;
           cleanUp(num_args, arguments);
           return nullptr;
       }
@@ -646,7 +645,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
           cur_job = jobslist.getLastStoppedJob(&job_id);
           if (cur_job == nullptr)
           {
-              cout << "smash error: bg: there is no stopped jobs to resume" << endl;
+              cerr << "smash error: bg: there is no stopped jobs to resume" << endl;
               cleanUp(num_args, arguments);
               return nullptr;
           }
@@ -657,13 +656,13 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
           cur_job = jobslist.getJobById(job_id);
           if (cur_job == nullptr)
           {
-              cout << "smash error: bg: job-id " << job_id << " does not exist" << endl;
+              cerr << "smash error: bg: job-id " << job_id << " does not exist" << endl;
               cleanUp(num_args, arguments);
               return nullptr;
           }
           if (!cur_job->isStopped)
           {
-              cout << "smash error: bg: job-id " << job_id << " is already running in the background" << endl;
+              cerr << "smash error: bg: job-id " << job_id << " is already running in the background" << endl;
               cleanUp(num_args, arguments);
               return nullptr;
           }
@@ -697,7 +696,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       char* arguments[COMMAND_MAX_ARGS];
       int num_args = _parseCommandLine(cmd_line, arguments);
       if ( num_args == 1 ){
-          cout << "smash error: head: not enough arguments" << endl;
+          cerr << "smash error: head: not enough arguments" << endl;
           cleanUp(num_args, arguments);
           return nullptr;
       }
