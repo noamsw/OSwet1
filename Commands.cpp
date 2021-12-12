@@ -310,23 +310,19 @@ void JobsList::addJob(Command* cmd, bool isStopped) {
 
 void JobsList::removeFinishedJobs() {
     int status, return_val;
-    for(auto  it = jobslist.begin(); it != jobslist.end(); ++it) { // a little confused with variable type
+    auto  it = jobslist.begin();
+    while (it != jobslist.end())
+    {
         return_val = waitpid(it->cmd_pid, &status, WNOHANG);
         if( return_val == -1){
             perror("smash error: waitpid failed");
             return;
         }
-        if ( it->cmd_pid ==  jobslist[jobslist.size()-1].cmd_pid)
-        {
-            if (return_val != 0)  //im ignoring status -1 which means there was an error and assuming that it was dealt with
-            {
-                jobslist.erase(it);
-            }
-            break;
-        }
-        if (return_val != 0) { //im ignoring status -1 which means there was an error and assuming that it was dealt with
-            it = jobslist.erase(it);
-        }
+
+        if (return_val != 0)
+            jobslist.erase(it);
+        else
+            ++it;
     }
 }
 
