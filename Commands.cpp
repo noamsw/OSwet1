@@ -198,7 +198,10 @@ void RedirectionCommand::execute()
         fd = open(file_name, O_WRONLY|O_CREAT|O_APPEND, 0666);
     else
         fd = open(file_name, O_WRONLY|O_CREAT, 0666);
-
+    if( fd == -1 ){
+        perror("smash error: open failed");
+        return;
+    }
     dup(fd); // setting FDT[1] to file_name
     Command* new_cmd = SmallShell::getInstance().CreateCommand(cmd_line_no_rd);
     if(new_cmd != nullptr)
@@ -207,15 +210,23 @@ void RedirectionCommand::execute()
         delete new_cmd;
     }
     // reset file descriptor
-    close(fd);
-    dup(saved_stdout);
-    close(saved_stdout); // not sure about it
+    if((close(fd)) == -1)
+        perror("smash error: close failed");
+    if((dup(saved_stdout)) == -1)
+        perror("smash error: dup failed");
+    if((close(saved_stdout)) == -1)
+        perror("smash error: close failed");
+
+     // not sure about it
 }
 
 void PipeCommand::execute()
 {
     int fd[2]; // fd[0] == read, fd[1] == write
-    pipe(fd);
+    if((pipe(fd)) == -1){
+        perror("smash error: pipe failed");
+        return;
+    }
     int first_son, sec_son;
     // fork_1
     if ((first_son = fork()) == 0) // first son, first cmd
@@ -235,6 +246,10 @@ void PipeCommand::execute()
     }
     else // father
     {
+        if(first_son == -1){
+            perror("smash error: fork failed");
+            return;
+        }
         if ((sec_son = fork()) == 0) // second son. second cmd
         {
             dup2(fd[0], 0);
@@ -249,9 +264,17 @@ void PipeCommand::execute()
             exit(0);
         }
     }
+    if(sec_son == -1){
+        perror("smash error: fork failed");
+        return;
+    }
     int status;
-    waitpid(first_son, &status, WEXITED);
-    waitpid(sec_son, &status, WEXITED);
+    if(waitpid(first_son, &status, WEXITED) == -1){
+        perror("smash error: waitpid failed");
+    }
+    if(waitpid(sec_son, &status, WEXITED) == -1){
+        perror("smash error: waitpid failed");
+    }
 }
 
 int SmallShell::get_a_job_id() {
@@ -266,7 +289,10 @@ void JobsList::addJob(Command* cmd, bool isStopped) {
         cmd->job_id = SmallShell::getInstance().get_a_job_id();
     }
     time_t time_entered;
-    time(&time_entered);
+    if(time(&time_entered) == -1){
+        perror("smash error: time failed");
+        return;
+    }
     JobEntry newjob(cmd->job_id, cmd->p_id, time_entered, cmd->cmd_line, isStopped);
     removeFinishedJobs();
     bool inserted = false;
@@ -286,6 +312,10 @@ void JobsList::removeFinishedJobs() {
     int status, return_val;
     for(auto  it = jobslist.begin(); it != jobslist.end(); ++it) { // a little confused with variable type
         return_val = waitpid(it->cmd_pid, &status, WNOHANG);
+        if( return_val == -1){
+            perror("smash error: waitpid failed");
+            return;
+        }
         if ( it->cmd_pid ==  jobslist[jobslist.size()-1].cmd_pid)
         {
             if (return_val != 0)  //im ignoring status -1 which means there was an error and assuming that it was dealt with
@@ -303,9 +333,15 @@ void JobsList::removeFinishedJobs() {
 void JobsList::printJobsList() {
     removeFinishedJobs();
     time_t time_now;
-    time(&time_now);
+    if(time(&time_now) == -1){
+        perror("smash error: time failed");
+        return;
+    }
     for(auto & it : jobslist){
-        time(&time_now); // im not sure how much of a diff itll make but i updated the time in the loop
+        if(time(&time_now) == -1){
+            perror("smash error: time failed");
+            return;
+        }
         double seconds_since = difftime(time_now, it.t_entered);
         if(it.isStopped)
             cout << "[" << it.job_id << "]" << it.cmd_line << ":" << it.cmd_pid << " " << seconds_since << " secs (stopped)" << endl;
@@ -353,7 +389,10 @@ void JobsList::killAllJobs()
     for (auto & it  : jobslist)
     {
         cout << it.cmd_pid << ": " << it.cmd_line << endl;
-        kill(it.cmd_pid, SIGKILL);
+        if(kill(it.cmd_pid, SIGKILL) == -1){
+            perror("smash error: kill failed");
+            return;
+        }
     }
 }
 
@@ -448,7 +487,10 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 
   else if (firstWord.compare("pwd") == 0) {
         char cwd[PATH_MAX];
-        getcwd(cwd, PATH_MAX);
+        if(!getcwd(cwd, PATH_MAX)){
+            perror("smash error: getcwd failed");
+            return nullptr;
+        }
         std::string pwd(cwd);
         // printf("%s", cwd);
         std::cout << pwd << endl;
@@ -479,10 +521,18 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
             free(prev_dir);
             prev_dir = nullptr;
             char cwd[PATH_MAX];
-            getcwd(cwd, PATH_MAX);
+            if(!getcwd(cwd, PATH_MAX)){
+                perror("smash error: getcwd failed");
+                cleanUp(num_args, arguments);
+                return nullptr;
+            }
             prev_dir = (char*)(malloc(PATH_MAX));
             strcpy(prev_dir, cwd);
-            chdir(tmp_path);
+            if(chdir(tmp_path) == -1){
+                perror("smash error: chdir failed");
+                cleanUp(num_args, arguments);
+                return nullptr;
+            }
         }
         else
         {
@@ -491,10 +541,18 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
                 prev_dir = NULL;
             }
             char cwd[PATH_MAX];
-            getcwd(cwd, PATH_MAX);
+            if(!getcwd(cwd, PATH_MAX)){
+                perror("smash error: getcwd failed");
+                cleanUp(num_args, arguments);
+                return nullptr;
+            }
             prev_dir = (char*)(malloc(PATH_MAX));
             strcpy(prev_dir, cwd);
-            chdir(arguments[1]);
+            if(chdir(arguments[1]) == -1){
+                perror("smash error: chdir failed");
+                cleanUp(num_args, arguments);
+                return nullptr;
+            }
         }
         cleanUp(num_args, arguments);
         return nullptr;
@@ -592,8 +650,13 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 
       cout << cur_job->cmd_line << " : " << cur_job->cmd_pid << endl;
 
-      if (cur_job->isStopped)
-        kill(cur_job->cmd_pid ,SIGCONT);
+      if (cur_job->isStopped){
+          if (kill(cur_job->cmd_pid ,SIGCONT) == -1){
+              perror("smash error: kill failed");
+              cleanUp(num_args, arguments);
+              return nullptr;
+          }
+      }
 
       int wstaus;
       pid_t cur_job_pid = cur_job->cmd_pid;
@@ -604,11 +667,16 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
       SmallShell::getInstance().cur_cmd->p_id = cur_job_pid; //so that we get the correct process to kill
       SmallShell::getInstance().cur_cmd->job_id = job_id;// so that we dont update a new job_id
       SmallShell::getInstance().p_running = true;
-      waitpid(cur_job_pid, &wstaus, WSTOPPED); // is 0 the right value for the "options" arg?
+      if(waitpid(cur_job_pid, &wstaus, WSTOPPED) == -1){
+          perror("smash error: waitpid failed");
+          cleanUp(num_args, arguments);
+          delete(SmallShell::getInstance().cur_cmd);
+          SmallShell::getInstance().cur_cmd  = nullptr;
+          return nullptr;
+      }
       SmallShell::getInstance().p_running = false;
       delete(SmallShell::getInstance().cur_cmd);
       SmallShell::getInstance().cur_cmd  = nullptr;
-
       cleanUp(num_args, arguments);
       return nullptr;
   }
@@ -671,7 +739,9 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
 
       cout << cur_job->cmd_line << " : " << cur_job->cmd_pid << endl;
       cur_job->isStopped = false;
-      kill(cur_job->cmd_pid, SIGCONT);
+      if (kill(cur_job->cmd_pid, SIGCONT) == -1){
+          perror("smash error: kill failed");
+      }
       cleanUp(num_args, arguments);
       return nullptr;
   }
