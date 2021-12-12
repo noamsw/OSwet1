@@ -531,23 +531,23 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         }
         else
         {
-            if(prev_dir) {
-                free(prev_dir);
-                prev_dir = NULL;
-            }
             char cwd[PATH_MAX];
             if(!getcwd(cwd, PATH_MAX)){
                 perror("smash error: getcwd failed");
                 cleanUp(num_args, arguments);
                 return nullptr;
             }
-            prev_dir = (char*)(malloc(PATH_MAX));
-            strcpy(prev_dir, cwd);
             if(chdir(arguments[1]) == -1){
                 perror("smash error: chdir failed");
                 cleanUp(num_args, arguments);
                 return nullptr;
             }
+            if(prev_dir) {
+                free(prev_dir);
+                prev_dir = NULL;
+            }
+            prev_dir = (char*)(malloc(PATH_MAX));
+            strcpy(prev_dir, cwd);
         }
         cleanUp(num_args, arguments);
         return nullptr;
