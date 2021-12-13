@@ -5,7 +5,7 @@
 #include <map>
 #include <linux/limits.h>
 #include <fcntl.h>
-
+#include <unistd.h>
 #define COMMAND_ARGS_MAX_LENGTH (200)
 #define COMMAND_MAX_ARGS (20)
 
@@ -55,9 +55,9 @@ class RedirectionCommand : public Command {
  // TODO: Add your data members
  public:
   char cmd_line_no_rd[COMMAND_ARGS_MAX_LENGTH];
-  char file_name[COMMAND_ARGS_MAX_LENGTH];
+  std::string file_name;
   bool append; // true if the command is (>>)
-  explicit RedirectionCommand(const char* cmd_line, char* c_l_n_rd, char* f_n, bool append);
+  explicit RedirectionCommand(const char* cmd_line, char* c_l_n_rd, std::string f_n, bool append);
   virtual ~RedirectionCommand() {}
   void execute() override;
   // void prepare() override;

@@ -154,12 +154,12 @@ PipeCommand::PipeCommand(const char* cmd_line, char* first_part, char* second_pa
     strcpy(second_command, second_part);
 }
 
-RedirectionCommand::RedirectionCommand(const char* cmd_line, char* c_l_n_rd, char* f_n, bool append) :
+RedirectionCommand::RedirectionCommand(const char* cmd_line, char* c_l_n_rd, std::string f_n, bool append) :
         Command(cmd_line), append(append)
 {
     strcpy(cmd_line_no_rd, c_l_n_rd);
     _removeBackgroundSign(cmd_line_no_rd);
-    strcpy(file_name, f_n);
+    file_name = f_n;
 }
 void ExternalCommand::execute()
 {
@@ -195,9 +195,9 @@ void RedirectionCommand::execute()
     close(1); // closing STDOUT in the FDT. should we also close STDERR(?)
     int fd; // 1. check if 0666 is needed. 2. should we edit the file_name with _parse?
     if (append)
-        fd = open(file_name, O_WRONLY|O_CREAT|O_APPEND, 0666);
+        fd = open(file_name.c_str(), O_WRONLY|O_CREAT|O_APPEND, 0666);
     else
-        fd = open(file_name, O_WRONLY|O_CREAT, 0666);
+        fd = open(file_name.c_str(), O_WRONLY|O_CREAT, 0666);
     if( fd == -1 ){
         perror("smash error: open failed");
         return;
@@ -210,8 +210,9 @@ void RedirectionCommand::execute()
         delete new_cmd;
     }
     // reset file descriptor
-    if((close(fd)) == -1)
-        perror("smash error: close failed");
+    close(fd);
+//    if((close(fd)) == -1)
+//        perror("smash error: close failed");
     if((dup(saved_stdout)) == -1)
         perror("smash error: dup failed");
     if((close(saved_stdout)) == -1)
@@ -440,10 +441,11 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
             strcpy(special_sign, ">>");
         }
         char cmd_no_rd[COMMAND_ARGS_MAX_LENGTH];
-        char file_name[COMMAND_ARGS_MAX_LENGTH];
+        char untrimmed_file_name[COMMAND_ARGS_MAX_LENGTH]; //trimmed the file to create the right file
         char non_const_cmd_line[COMMAND_ARGS_MAX_LENGTH];
         strcpy(non_const_cmd_line, cmd_line);
-        splitSpecialCommand(non_const_cmd_line, cmd_no_rd, special_sign, file_name);
+        splitSpecialCommand(non_const_cmd_line, cmd_no_rd, special_sign, untrimmed_file_name);
+        std::string file_name = _trim(untrimmed_file_name);
         return new RedirectionCommand(cmd_line, cmd_no_rd, file_name, append);
     }
     if ((special_type == 3 or special_type == 4)) // [pipes]: (3 for |) (4 for |&)
