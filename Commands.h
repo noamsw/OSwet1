@@ -34,8 +34,9 @@ class BuiltInCommand : public Command {
 
 class ExternalCommand : public Command {
  public:
+  bool should_fork;// right now this is never used
   char* bash_args[4];
-  ExternalCommand(const char* cmd_line);
+  ExternalCommand(const char* cmd_line, bool should_fork);
   virtual ~ExternalCommand(){};
   void execute() override;
 };

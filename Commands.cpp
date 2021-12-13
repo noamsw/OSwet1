@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <sstream>
 #include <sys/wait.h>
@@ -32,6 +33,26 @@ void cleanUp(int num_args, char** arguments)
 
 const string WHITESPACE = " \n\r\t\f\v";
 
+int numLinesInFile(const char* filename){ // counts num of lines in file
+
+    int n_lines = 0;
+    std::string line;
+    std::ifstream myfile(filename);
+    while (std::getline(myfile, line))
+        ++n_lines;
+    return n_lines;
+//    FILE *fd;
+//    int n_lines = 0;
+//    char ch;
+//    fd = fopen(filename, "r");
+//    if(!fd)//failed
+//        return -1;
+//    while (EOF != (ch=getc(fd)))
+//        if ('\n' == ch)
+//            ++n_lines;
+//    fclose(fd);
+//    return n_lines;
+}
 string _ltrim(const std::string& s)
 {
     size_t start = s.find_first_not_of(WHITESPACE);
@@ -107,8 +128,17 @@ int checkSpecial(char** arguments, int num_args)
     }
     return 0; // cmd isnt special
 }
-
-void splitSpecialCommand(char* cmd_line, char* first_part, char* special_sign, char* sec_part)
+bool isExecvCmd(std::string cmd_line){ // will check if a cmd is an external cmd
+    string cmd_s = _trim(string(cmd_line));
+    string firstWord = cmd_s.substr(0, cmd_s.find_first_of(WHITESPACE));
+    if (firstWord == "chprompt" || firstWord == "showpid" || firstWord == "pwd" || firstWord == "cd" ||
+        firstWord == "jobs" || firstWord == "kill" || firstWord == "fg" ||
+        firstWord == "bg" || firstWord == "quit" || firstWord == "head"){
+        return false;
+    }
+    return true;
+}
+void splitSpecialCommand(char* cmd_line, char* first_part, char* special_sign, char* sec_part) // splits the special cmds for us and also will check if execv cmd
 {
     char* token = strtok(cmd_line, special_sign);
     strcpy(first_part, token);
@@ -131,7 +161,7 @@ Command::~Command()
 
 BuiltInCommand::BuiltInCommand(const char* cmd_line) : Command(cmd_line){}
 
-ExternalCommand::ExternalCommand(const char* cmd_line) : Command(cmd_line)
+ExternalCommand::ExternalCommand(const char* cmd_line, bool should_fork = true) : Command(cmd_line), should_fork(should_fork)
 {
     char new_line[COMMAND_ARGS_MAX_LENGTH];
     strcpy(new_line, cmd_line);
@@ -163,6 +193,7 @@ RedirectionCommand::RedirectionCommand(const char* cmd_line, char* c_l_n_rd, std
 }
 void ExternalCommand::execute()
 {
+//    if(should_fork){
     pid_t returned_pid = fork();
     this->p_id = returned_pid;
     if (returned_pid == 0) // son
@@ -187,38 +218,48 @@ void ExternalCommand::execute()
             SmallShell::getInstance().cur_cmd = nullptr;
         }
     }
+//    }added in comment until i can think how to use
+//    else{
+//        execv("/bin/bash", bash_args);//in case of a redirection or pipe it should not fork, the fork cmd will take care of that.
+//    }
 }
 
 void RedirectionCommand::execute()
 {
-    int saved_stdout = dup(1);
-    close(1); // closing STDOUT in the FDT. should we also close STDERR(?)
-    int fd; // 1. check if 0666 is needed. 2. should we edit the file_name with _parse?
-    if (append)
-        fd = open(file_name.c_str(), O_WRONLY|O_CREAT|O_APPEND, 0666);
-    else
-        fd = open(file_name.c_str(), O_WRONLY|O_CREAT, 0666);
-    if( fd == -1 ){
-        perror("smash error: open failed");
-        return;
+    pid_t ret_pid = fork();// this is the fork for the redirection cmd
+    if( ret_pid == 0 ){//son
+        int saved_stdout = dup(1);
+        close(1); // closing STDOUT in the FDT. should we also close STDERR(?)
+        int fd; // 1. check if 0666 is needed. 2. should we edit the file_name with _parse?
+        if (append)
+            fd = open(file_name.c_str(), O_WRONLY|O_CREAT|O_APPEND, 0666);
+        else
+            fd = open(file_name.c_str(), O_WRONLY|O_CREAT|O_TRUNC, 0666);
+        if( fd == -1 ){
+            perror("smash error: open failed");
+            return;
+        }
+        dup(fd); // setting FDT[1] to file_name
+        Command* new_cmd = SmallShell::getInstance().CreateCommand(cmd_line_no_rd);
+        if(new_cmd != nullptr)
+        {
+            new_cmd->execute();
+            delete new_cmd;
+        }
+        // reset file descriptor
+        close(fd);
+//        if((close(fd)) == -1)
+//            perror("smash error: close failed");
+        if((dup(saved_stdout)) == -1)
+            perror("smash error: dup failed");
+        if((close(saved_stdout)) == -1)
+            perror("smash error: close failed");
+        exit(0);
     }
-    dup(fd); // setting FDT[1] to file_name
-    Command* new_cmd = SmallShell::getInstance().CreateCommand(cmd_line_no_rd);
-    if(new_cmd != nullptr)
-    {
-        new_cmd->execute();
-        delete new_cmd;
-    }
-    // reset file descriptor
-    close(fd);
-//    if((close(fd)) == -1)
-//        perror("smash error: close failed");
-    if((dup(saved_stdout)) == -1)
-        perror("smash error: dup failed");
-    if((close(saved_stdout)) == -1)
-        perror("smash error: close failed");
-
-    // not sure about it
+    else{//father
+        int wstaus;
+        waitpid(ret_pid, &wstaus, WEXITED);
+    }// not sure about it
 }
 
 void PipeCommand::execute()
@@ -344,9 +385,9 @@ void JobsList::printJobsList() {
         }
         double seconds_since = difftime(time_now, it.t_entered);
         if(it.isStopped)
-            cout << "[" << it.job_id << "]" << it.cmd_line << ":" << it.cmd_pid << " " << seconds_since << " secs (stopped)" << endl;
+            cout << "[" << it.job_id << "]" << it.cmd_line << " : " << it.cmd_pid << " " << seconds_since << " secs (stopped)" << endl;
         else
-            cout << "[" << it.job_id << "]" << it.cmd_line << ":" << it.cmd_pid << " " << seconds_since << " secs" << endl;
+            cout << "[" << it.job_id << "]" << it.cmd_line << " : " << it.cmd_pid << " " << seconds_since << " secs" << endl;
     }
 }
 
@@ -583,7 +624,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         int id_int = atoi(arguments[2]);
         JobsList::JobEntry* job = jobslist.getJobById(id_int);
         if(!job){
-            cerr << "smash error: kill: job-id" << id << "does not exist" << endl;
+            cerr << "smash error: kill: job-id " << id << " does not exist" << endl;
             cleanUp(num_args, arguments);
             return nullptr;
         }
@@ -772,6 +813,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
             return nullptr;
         }
         int num_lines;
+        int num_lines_in_file;
         FILE* fd;
         if(num_args ==  3){
             string str_lines = arguments[1];
@@ -779,27 +821,29 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
             stringstream st_lines(str_lines);
             st_lines >> num_lines;
             fd = fopen(arguments[2], "r");
+            num_lines_in_file = numLinesInFile(arguments[2]);
         }
         else{
             num_lines = 10;
             fd = fopen(arguments[1], "r");
+            num_lines_in_file = numLinesInFile(arguments[1]);
         }
-        if(!fd){
+        if(!fd || (num_lines_in_file == -1)){
             perror("smash error: open failed");
             cleanUp(num_args, arguments);
             return nullptr;
         }
+        if(num_lines_in_file < num_lines)
+            num_lines = num_lines_in_file;//check that we dont go past the eof
         char *line = nullptr;
         size_t len = 0;
         for (int i = 0 ; i < num_lines; i++) {
-            if(feof(fd))
+            if(feof(fd)){
                 break;
-            if(getline(&line, &len,  fd) == -1){
-                perror("smash error: read failed"); //if is - then we need to print an error
-                cleanUp(num_args, arguments);
-                return nullptr;
             }
+            getline(&line, &len,  fd);
             cout << line;
+            line = nullptr;
         }
         if(line)
             free(line);
