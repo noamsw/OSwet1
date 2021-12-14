@@ -323,13 +323,13 @@ void PipeCommand::execute()
 //    }
 }
 
-int SmallShell::get_a_job_id() {
+int SmallShell::get_a_job_id()
+{
     // will returnt the current id open for a job and increment
     if(jobslist.jobslist.empty())
-        SmallShell::getInstance().max_job_id = 1;
-    int  id = SmallShell::getInstance().max_job_id;
-    SmallShell::getInstance().max_job_id++;
-    return id;
+        return 1;
+    else
+        return (jobslist.jobslist[jobslist.jobslist.size() - 1].job_id + 1);
 }
 void JobsList::addJob(Command* cmd, bool isStopped) {
     if(cmd->job_id == -1)
