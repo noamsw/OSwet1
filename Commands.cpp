@@ -845,7 +845,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
             return nullptr;
         }
         if(num_lines_in_file < num_lines)
-            num_lines = num_lines_in_file;//check that we dont go past the eof
+            num_lines = num_lines_in_file;//check that we dont go past the eof here
         char *line = nullptr;
         size_t len = 0;
         for (int i = 0 ; i < num_lines; i++) {
