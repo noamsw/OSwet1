@@ -681,6 +681,12 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         if (num_args == 1) // job_id isnt given
         {
             int vector_size = jobslist.jobslist.size();
+            if (vector_size == 0)
+            {
+                cerr << "smash error: fg: jobs list is empty" << endl;
+                cleanUp(num_args, arguments);
+                return nullptr;
+            }
             job_id = jobslist.jobslist[vector_size-1].job_id;
         }
         else // job_id is given
@@ -690,12 +696,6 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         if (num_args >= 2 && cur_job == nullptr)
         {
             cerr << "smash error: fg: job-id " << job_id << " does not exist" << endl;
-            cleanUp(num_args, arguments);
-            return nullptr;
-        }
-        if (num_args == 1 && cur_job == nullptr)
-        {
-            cerr << "smash error: fg: jobs list is empty" << endl;
             cleanUp(num_args, arguments);
             return nullptr;
         }
