@@ -226,8 +226,8 @@ void ExternalCommand::execute()
 
 void RedirectionCommand::execute()
 {
-    pid_t ret_pid = fork();// this is the fork for the redirection cmd
-    if( ret_pid == 0 ){//son
+//    pid_t ret_pid = fork();// this is the fork for the redirection cmd
+//    if( ret_pid == 0 ){//son
         int saved_stdout = dup(1);
         close(1); // closing STDOUT in the FDT. should we also close STDERR(?)
         int fd; // 1. check if 0666 is needed. 2. should we edit the file_name with _parse?
@@ -237,6 +237,7 @@ void RedirectionCommand::execute()
             fd = open(file_name.c_str(), O_WRONLY|O_CREAT|O_TRUNC, 0666);
         if( fd == -1 ){
             perror("smash error: open failed");
+            dup(saved_stdout);//return filehandler
             return;
         }
         dup(fd); // setting FDT[1] to file_name
@@ -254,12 +255,12 @@ void RedirectionCommand::execute()
             perror("smash error: dup failed");
         if((close(saved_stdout)) == -1)
             perror("smash error: close failed");
-        exit(0);
-    }
-    else{//father
-        int wstaus;
-        waitpid(ret_pid, &wstaus, WEXITED);
-    }// not sure about it
+//        exit(0);
+//    }
+//    else{//father
+//        int wstaus;
+//        waitpid(ret_pid, &wstaus, WEXITED);
+//    }// not sure about it
 }
 
 void PipeCommand::execute()
@@ -292,6 +293,8 @@ void PipeCommand::execute()
             perror("smash error: fork failed");
             return;
         }
+        int status;
+        waitpid(first_son, &status, WEXITED);
         if ((sec_son = fork()) == 0) // second son. second cmd
         {
             dup2(fd[0], 0);
@@ -311,8 +314,6 @@ void PipeCommand::execute()
         return;
     }
     int status;
-    /*test*/
-    waitpid(first_son, &status, WEXITED);
     waitpid(sec_son, &status, WEXITED);
 //    if(waitpid(first_son, &status, WEXITED) == -1){
 //        perror("smash error: waitpid failed");
@@ -324,6 +325,8 @@ void PipeCommand::execute()
 
 int SmallShell::get_a_job_id() {
     // will returnt the current id open for a job and increment
+    if(jobslist.jobslist.empty())
+        SmallShell::getInstance().max_job_id = 1;
     int  id = SmallShell::getInstance().max_job_id;
     SmallShell::getInstance().max_job_id++;
     return id;
@@ -385,9 +388,9 @@ void JobsList::printJobsList() {
         }
         double seconds_since = difftime(time_now, it.t_entered);
         if(it.isStopped)
-            cout << "[" << it.job_id << "]" << it.cmd_line << " : " << it.cmd_pid << " " << seconds_since << " secs (stopped)" << endl;
+            cout << "[" << it.job_id << "] " << it.cmd_line << " : " << it.cmd_pid << " " << seconds_since << " secs (stopped)" << endl;
         else
-            cout << "[" << it.job_id << "]" << it.cmd_line << " : " << it.cmd_pid << " " << seconds_since << " secs" << endl;
+            cout << "[" << it.job_id << "] " << it.cmd_line << " : " << it.cmd_pid << " " << seconds_since << " secs" << endl;
     }
 }
 
@@ -606,25 +609,33 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
     else if(firstWord.compare("kill") == 0){
         char* arguments[COMMAND_MAX_ARGS];
         int num_args = _parseCommandLine(new_line, arguments);
+        if(num_args != 3 ){
+            cerr << "smash error: kill: invalid arguments" << endl;
+            cleanUp(num_args, arguments);
+            return nullptr;
+        }
         string sig = arguments[1];
-        string id = arguments[2];
+        string job_id = arguments[2];
+        if(job_id.front() == '-')
+            job_id = job_id.substr(1);
         string sig_num = arguments[1];
         sig_num = sig_num.substr(1);
         bool sig_not_digits = true;
         bool id_not_digits = true;
         if(sig_num.find_first_not_of("1234567890") == std::string::npos)// check to see that a number was entered
             sig_not_digits = false; //im not 100% sure that this is what i need to check, perhaps by val of signals
-        if(id.find_first_not_of("1234567890") == std::string::npos)// check to see that a number was entered
+        if(job_id.find_first_not_of("1234567890") == std::string::npos)// check to see that a number was entered
             id_not_digits = false;
         if(num_args != 3 || sig[0] != '-' || sig_not_digits || id_not_digits){
             cerr << "smash error: kill: invalid arguments" << endl;
             cleanUp(num_args, arguments);
             return nullptr;
         }
+        job_id = arguments[2];
         int id_int = atoi(arguments[2]);
         JobsList::JobEntry* job = jobslist.getJobById(id_int);
         if(!job){
-            cerr << "smash error: kill: job-id " << id << " does not exist" << endl;
+            cerr << "smash error: kill: job-id " << job_id << " does not exist" << endl;
             cleanUp(num_args, arguments);
             return nullptr;
         }
