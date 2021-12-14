@@ -660,6 +660,8 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         {
             bool bad_format = true;
             string job_id_s = arguments[1];
+            if(job_id_s.front() == '-')
+                job_id_s = job_id_s.substr(1);
             if(job_id_s.find_first_not_of("1234567890") == std::string::npos)
                 bad_format= false;
             if(bad_format)
@@ -742,6 +744,8 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         {
             bool bad_format = true;
             string job_id_s = arguments[1];
+            if(job_id_s.front() == '-')
+                job_id_s = job_id_s.substr(1);
             if(job_id_s.find_first_not_of("1234567890") == std::string::npos)
                 bad_format= false;
             if(bad_format)
