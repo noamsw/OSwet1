@@ -200,7 +200,10 @@ void ExternalCommand::execute()
     {
         setpgrp();
         this->p_id = getpid();
-        execv("/bin/bash", bash_args);
+        cout << "debug: entering execv" << endl;
+        execv("/bin/bash", bash_args); // check if failed
+        // cout << "debug: execv failed" << endl;
+        exit(0);
     }
     else // father
     {
@@ -213,7 +216,9 @@ void ExternalCommand::execute()
             SmallShell::getInstance().cur_cmd = this;
             SmallShell::getInstance().p_running = true;
             int wstaus;
-            waitpid(returned_pid, &wstaus, WSTOPPED); // check if options should be 0
+            cout << "debug: waiting for the external command child process" << endl;
+            waitpid(returned_pid, &wstaus, WSTOPPED);
+            cout << "debug: done waiting for external command child process" << endl;
             SmallShell::getInstance().p_running = false;
             SmallShell::getInstance().cur_cmd = nullptr;
         }
@@ -265,6 +270,7 @@ void RedirectionCommand::execute()
 
 void PipeCommand::execute()
 {
+    cout << "debug: enterd execution of pipe cmd" << endl;
     int fd[2]; // fd[0] == read, fd[1] == write
     if((pipe(fd)) == -1){
         perror("smash error: pipe failed");
@@ -274,6 +280,7 @@ void PipeCommand::execute()
     // fork_1
     if ((first_son = fork()) == 0) // first son, first cmd
     {
+        cout << "debug: enterd execution of first son" << endl;
         if(err_pipe)
             dup2(fd[1], 2);
         else
@@ -285,7 +292,8 @@ void PipeCommand::execute()
             first_cmd->execute();
             delete(first_cmd);
         }
-        exit(0);
+        cout << "debug: finished execution of first son" << endl;
+        exit(1);
     }
     else // father
     {
@@ -293,10 +301,13 @@ void PipeCommand::execute()
             perror("smash error: fork failed");
             return;
         }
-        int status;
-        waitpid(first_son, &status, WEXITED);
+        int status_1;
+        cout << "debug: waiting first son" << endl;
+        waitpid(first_son, &status_1, 0); // was WEXITED
+        cout << "debug: the status of the first child is: " << WIFEXITED(status_1) << endl;
         if ((sec_son = fork()) == 0) // second son. second cmd
         {
+            cout << "debug: enterd execution of second son" << endl;
             dup2(fd[0], 0);
             close(fd[1]);
             close(fd[0]);
@@ -306,15 +317,19 @@ void PipeCommand::execute()
                 second_cmd->execute();
                 delete(second_cmd);
             }
-            exit(0);
+            cout << "debug: finished execution of second son" << endl;
+            exit(2);
         }
     }
     if(sec_son == -1){
         perror("smash error: fork failed");
         return;
     }
-    int status;
-    waitpid(sec_son, &status, WEXITED);
+    int status_2;
+    cout << "debug: waiting for second son" << endl;
+    waitpid(sec_son, &status_2, 0); // was WEXITED
+    cout << "debug: the status of the second child is: " << WIFEXITED(status_2) << endl;
+    cout << "debug: finished pipe" << endl;
 //    if(waitpid(first_son, &status, WEXITED) == -1){
 //        perror("smash error: waitpid failed");
 //    }
@@ -721,7 +736,7 @@ Command * SmallShell::CreateCommand(const char* cmd_line) {
         SmallShell::getInstance().cur_cmd->p_id = cur_job_pid; //so that we get the correct process to kill
         SmallShell::getInstance().cur_cmd->job_id = job_id;// so that we dont update a new job_id
         SmallShell::getInstance().p_running = true;
-        if(waitpid(cur_job_pid, &wstaus, WSTOPPED) == -1){
+        if(waitpid(cur_job_pid, &wstaus, WSTOPPED) == -1){ // was WSTOPPED
             perror("smash error: waitpid failed");
             cleanUp(num_args, arguments);
             delete(SmallShell::getInstance().cur_cmd);
